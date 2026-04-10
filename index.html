@@ -1,784 +1,440 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Sekai-Score Calculator</title>
-        <style>
-            
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sekai-Score Calculator Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ffcc;
+            --secondary: #ff00ff;
+            --bg-dark: #121212;
+            --card-bg: #1e1e1e;
+            --text: #ffffff;
+            --border: #333;
+        }
 
-            .container {
-                display: flex;
-            }
-            .left {
-                width: 50%;
-                align-items: center;
-                background-color: white;
-            }
-            .right {
-                width: 100%;
-                background-color: lightgreen;
-            }
-            @media screen and (max-width: 600px) {
-                .container {
-                    flex-direction: column; /* 세로 방향으로 요소를 배치 */
-                }
-                .left, .right  {
-                    width:100%
-                }   
-}
-        </style>
-    </head>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .lang-switcher {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .main-container {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .main-container { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+        }
+
+        h1, h2 { margin-top: 0; color: var(--primary); }
+
+        /* UI Elements */
+        #song-search-input, select, input {
+            width: 100%; padding: 12px; margin: 8px 0;
+            background: #2a2a2a; border: 1px solid var(--border);
+            color: white; border-radius: 8px; box-sizing: border-box;
+        }
+
+        .song-list-scroll {
+            max-height: 350px; overflow-y: auto;
+            border: 1px solid var(--border); border-radius: 8px; background: #181818;
+        }
+
+        .song-option {
+            display: flex; align-items: center; padding: 10px;
+            cursor: pointer; border-bottom: 1px solid #222; transition: 0.2s;
+        }
+
+        .song-option:hover { background: #333; }
+        .song-option img { width: 50px; height: 50px; border-radius: 4px; margin-right: 15px; object-fit: cover; }
+
+        .selected-song-display {
+            display: flex; gap: 15px; background: #252525;
+            padding: 15px; border-radius: 10px; margin-bottom: 15px; align-items: center;
+        }
+
+        #selected-jacket { width: 80px; height: 80px; border-radius: 8px; background: #444; }
+
+        .input-group { display: flex; align-items: center; margin-bottom: 10px; }
+        .input-group label { width: 100px; font-weight: bold; }
+
+        button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; margin: 2px; }
+        .btn-primary { background: var(--primary); color: #000; }
+        .btn-danger { background: #ff4d4d; color: white; }
+        .btn-load { background: #444; color: white; }
+        .btn-lang { background: #333; color: #ccc; border: 1px solid #444; }
+        .btn-lang.active { border-color: var(--primary); color: var(--primary); }
+
+        .result-box {
+            background: #000; padding: 15px; border-radius: 10px;
+            text-align: center; margin: 15px 0; border-left: 5px solid var(--primary);
+        }
+
+        #result-score { font-size: 24px; font-weight: bold; color: var(--primary); }
+        #potential-val { font-size: 18px; color: var(--secondary); }
+
+        .history-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 14px; gap: 12px; }
+        .history-item img { width: 45px; height: 45px; border-radius: 4px; }
+        .history-info { flex-grow: 1; }
+
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-dark); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 9999;
+        }
+        .spinner { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
 <body>
-<div class="container">
-<div class="left">
-<h1>계산기</h1>
-<pre>
-<select name="level" id="level" onchange="updateSecondSelect(this)">
-    <option value="">레벨 선택</option>
-    <option value="25">25</option>
-    <option value="26">26</option>
-    <option value="27">27</option>
-    <option value="28">28</option>
-    <option value="29">29</option>
-    <option value="30">30</option>
-    <option value="31">31</option>
-    <option value="32">32</option>
-    <option value="33">33</option>
-    <option value="34">34</option>
-    <option value="35">35</option>
-    <option value="36">36</option>
-    <option value="37">37</option>
-</select>
 
-<select id = "song" onchange="SongSelected(this)">
-    <option value="test">먼저 레벨을 선택해 주세요.</option>
-</select>
+<div class="lang-switcher">
+    <button class="btn-lang active" onclick="setLang('ko')">한국어</button>
+    <button class="btn-lang" onclick="setLang('en')">English</button>
+    <button class="btn-lang" onclick="setLang('ja')">日本語</button>
+</div>
 
-<label>Perfect <input type="Number" id="Perfect" size="10" disabled><br></label>
-<label>Great   <input type="Number" id="Great" size="10" onchange="Input(this)" disabled><br></label>
-<label>Good    <input type="Number" id="Good" size="10" onchange="Input(this)" disabled><br></label>
-<label>Bad     <input type="Number" id="Bad" size="10" onchange="Input(this)" disabled><br></label>
-<label>Miss    <input type="Number" id="Miss" size="10" onchange="Input(this)" disabled></label>
+<div id="loading" class="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loading-text">Loading Data...</div>
+</div>
 
-<button id="reset" onclick="reset()" disabled>초기화</button>
-<div id='result'></div>
-<div id="potential"></div>
+<div id="main-content" class="main-container">
+    <div class="card">
+        <h1 id="t-title">계산기</h1>
+        
+        <div class="song-picker-container">
+            <label id="t-filter">난이도 필터</label>
+            <select id="level-select"></select>
+            <input type="text" id="song-search-input" placeholder="Search..." oninput="filterSongs()">
+            <div id="song-list" class="song-list-scroll"></div>
+        </div>
 
-<button id="confirm"  onclick="Confirm()" disabled>결정</button>
+        <div class="selected-song-display" id="selected-song-ui" style="display:none;">
+            <img id="selected-jacket" src="" alt="jacket">
+            <div class="selected-info-text">
+                <div id="selected-title" style="font-weight: bold;"></div>
+                <div id="selected-diff" style="font-size: 0.8em; color: var(--primary);"></div>
+            </div>
+        </div>
 
-<div id="sektential"></div>
+        <div class="result-box">
+            <div id="result-score">0</div>
+            <div id="potential-val">Rating: 0.00</div>
+        </div>
 
-</pre>
+        <div id="input-fields">
+            <div class="input-group"><label>Perfect</label><input type="number" id="perf" readonly=""></div>
+            <div class="input-group"><label>Great</label><input type="number" id="great" value="0" oninput="calculate()"></div>
+            <div class="input-group"><label>Good</label><input type="number" id="good" value="0" oninput="calculate()"></div>
+            <div class="input-group"><label>Bad</label><input type="number" id="bad" value="0" oninput="calculate()"></div>
+            <div class="input-group"><label>Miss</label><input type="number" id="miss" value="0" oninput="calculate()"></div>
+        </div>
+
+        <button class="btn-primary" style="width: 100%;" id="t-save" onclick="saveRecord()">결과 등록하기</button>
+        <button class="btn-load" style="width: 100%;" id="t-reset" onclick="resetInputs()">초기화</button>
+        <div id="top50-avg" style="margin-top: 15px; text-align: center; color: #888;">Top 50 Avg: 0.000</div>
+    </div>
+
+    <div class="card">
+        <h2 id="t-history">등록된 기록</h2>
+        <div style="margin-bottom:15px; display:flex; gap:5px;">
+            <button class="btn-lang" id="t-export" onclick="exportData()">내보내기 (JSON)</button>
+            <button class="btn-lang" id="t-import" onclick="document.getElementById('import-file').click()">가져오기</button>
+            <input type="file" id="import-file" style="display:none" accept=".json" onchange="importData(event)">
+        </div>
+        <div id="history-list"></div>
+    </div>
+</div>
 
 <script>
-const data = `25,25.25,25시의 정열,725
-26,25.75,Tell Your World,1147
-27,27.125,alive,1016
-26,26.4,いちにのさんで,715
-26,26,夜明けと蛍,852
-26,25.5,Where shall we go?,735
-26,26,エピローグに君はいない,625
-26,26.25,インタビュア,1097
-27,27.25,タイムマシン,903
-27,26.8,from Y to Y,982
-26,26,ray,1092
-27,26.8,心拍数♯0822,843
-26,25.75,アサガオの散る頃に,812
-27,26.8,ニア,841
-27,27.25,メルティランドナイトメア,959
-26,26.4,ECHO,805
-27,26.8,ハロ／ハワユ,851
-26,25.75,自傷無色,829
-26,26.2,独りんぼエンヴィー,589
-26,26.2,メリュー,983
-26,26,泥中に咲く,761
-26,26.4,それがあなたの幸せとしても,814
-27,26.6,「１」,814
-26,26,オーダーメイド,601
-26,26,アイノマテリアル,814
-26,25.75,メタモリボン,685
-26,26.2,カナデトモスソラ,703
-26,26.4,再生,547
-26,26.2,ノマド,592
-26,26.2,君の夜をくれ,662
-27,27.125,Blessing,986
-28,27.75,Hand in Hand,1072
-27,26.8,on the rocks,1004
-27,27.375,愛されなくても君がいる,1075
-27,27.375,炉心融解,1167
-27,26.6,悪ノ娘,784
-27,26.6,悪ノ召使,784
-27,27,砂の惑星,1062
-27,27,千年の独奏歌,906
-27,27.125,ブラック★ロックシューター,930
-27,27,ダブルラリアット,1115
-26,25.5,Goodbye,860
-26,25.75,Copycat,997
-28,27.875,Highlight,690
-27,27.25,眠らせ姫からの贈り物,1003
-27,27.125,Afterglow,844
-27,27.125,青く駆けろ！,1048
-28,27.875,ウミユリ海底譚,833
-26,26.2,glow,987
-28,28,ツギハギスタッカート,861
-28,28,恋愛裁判,1149
-27,27.25,どりーみんチュチュ,1074
-28,28,ロミオとシンデレラ,1035
-27,27,からくりピエロ,1005
-27,27,少女レイ,1400
-27,26.8,トリノコシティ,852
-27,27.125,ロンリーユニバース,999
-27,27.375,深海少女,994
-28,28.25,フラジール,1040
-28,27.75,Just Be Friends,989
-27,27.5,幽霊東京,1053
-27,27,スイートマジック,1224
-28,27.75,シャルル,824
-28,28.25,乙女解剖,1002
-27,27.125,妄想感傷代償連盟,966
-27,27,青色絵具,1058
-26,26.4,相生,1232
-28,28.25,Color of Drops,918
-27,27.125,アイスドロップ,802
-27,26.8,イフ,1062
-27,27.125,フロート・プランナー,832
-27,27.25,私は、私達は,918
-27,27,街,769
-27,26.8,虚ろを扇ぐ,1112
-28,28.125,ワンスアポンアドリーム,871
-27,26.8,星空のメロディー,821
-27,27,箱庭のコラル,981
-27,27,セカイ,858
-27,27.125,群青讃歌,833
-29,28.875,メルト,1586
-29,28.75,ワールドイズマイン,1417
-28,27.75,39みゅーじっく！,1039
-29,28.875,Leia - Remind,1155
-29,29.125,＊ハロー、プラネット。,1076
-29,29,ブレス・ユア・ブレス,873
-28,28.125,ヒビカセ,1019
-28,28.125,みくみくにしてあげる♪【してやんよ】,939
-28,28.125,トキヲ・ファンカ,859
-29,29.25,サンドリヨン 10th Anniversary,913
-28,28,ジウダス,898
-29,28.875,Miku,1106
-28,28,こちら、幸福安心委員会です。,1096
-28,28.125,Change me,1247
-28,28.125,パラジクロロベンゼン,1063
-28,28.125,陽だまりのセツナ,1105
-28,28.5,天使の翼。,1340
-28,28.375,ココロ,1090
-28,27.875,ストロボラスト,866
-28,28.375,パレットには君がいっぱい,966
-28,27.875,Q,998
-28,27.875,39,1339
-28,27.875,円尾坂の仕立屋,1007
-28,27.75,悪徳のジャッジメント,983
-27,26.8,Sharing The World,1122
-28,27.875,Wonder Style,1013
-28,28,心拍ペアリング,696
-29,28.875,ロキ,975
-29,28.75,アスノヨゾラ哨戒班,1208
-29,29.25,ドラマツルギー,862
-28,28,僕らまだアンダーグラウンド,1035
-28,27.75,夜もすがら君想ふ,1190
-28,28,"Hello, Worker",918
-28,27.875,ハッピーシンセサイザ,1136
-29,28.875,Nostalogic,985
-29,28.875,ビバハピ,1019
-28,28,心予報,1060
-29,29.25,drop pop candy,902
-28,28.375,威風堂々,1166
-28,28.125,トラフィック・ジャム,1089
-28,28.375,ガランド,943
-29,29,阿吽のビーツ,918
-28,28.375,帝国少女,1178
-28,27.875,絶え間なく藍色,1089
-29,28.75,お気に召すまま,988
-28,27.875,いーあるふぁんくらぶ,1002
-28,28.125,踊れオーケストラ,1068
-29,28.875,ラブカ？,878
-28,28.25,1925,1117
-28,28,太陽系デスコ,1188
-28,28.5,とても痛い痛がりたい,915
-29,29.375,ボッカデラベリタ,1119
-29,29,カトラリー,806
-28,28.25,うっせぇわ,1302
-28,28.125,愛して愛して愛して,1173
-28,28.375,アイロニ,943
-28,28.25,命ばっかり,1092
-28,27.875,去り人達のワルツ,798
-28,27.875,フロムトーキョー,814
-28,28.25,Peaky Peaky,855
-29,28.875,Flyway,1088
-28,28.25,星を繋ぐ,821
-29,28.75,アイドル新鋭隊,940
-28,28.25,ワールドワイドワンダー,785
-29,28.75,DREAM PLACE,1172
-28,28.5,Forward,895
-29,28.75,Beat Eater,798
-28,27.75,ミライ,1281
-28,28.375,仮死化,1186
-28,28.25,ひつじがいっぴき,1305
-29,29,potatoになっていく,863
-28,28.25,どんな結末がお望みだい？,835
-29,29,星空オーケストラ,1159
-28,28.125,アイディスマイル,1247
-28,28.25,トリコロージュ,999
-28,27.525,演劇,984
-29,28.875,ワーワーワールド,960
-29,29.125,Journey,1322
-30,30,ネクストネスト,1131
-29,29.25,Gimme×Gimme,907
-30,30,アンノウン・マザーグース,1292
-29,29,ODDS＆ENDS,921
-30,29.875,泡沫未来,903
-29,29.125,だれかの心臓になれたなら,1044
-29,29.125,ドーナツホール,1328
-29,28.875,ルカルカ★ナイトフィーバー,1311
-29,29.125,それでもいいんだよ,1009
-29,29,Bad ∞ End ∞ Night,1018
-30,30.125,星屑ユートピア,1308
-29,29.125,あったかいと,1376
-29,29.125,カンタレラ,1063
-29,28.525,FREELY TOMORROW,1121
-30,30,リンちゃんなう！,1409
-29,29,p.h.,872
-29,29.375,スノーマン,1243
-29,29.25,名もない革命,1099
-29,29.25,悪食娘コンチータ,851
-29,29,Blue Star,1163
-29,28.625,UNDERWATER,1062
-29,29.5,いかないで,1173
-29,29.125,"Hello,world!",949
-29,29.5,ロストエンファウンド,1271
-29,29.375,天ノ弱,1131
-29,29.5,快晴,1533
-29,29.25,マシュマリー,1303
-30,29.75,ヴァンパイア,1299
-29,29.125,Booo!,860
-29,29.125,踊,1083
-29,28.75,雨とペトラ,1206
-29,29.125,PaⅢ.SENSATION,1244
-29,29.25,YY,1175
-29,29.125,DAYBREAK FRONTLINE,1179
-30,30.125,ブリキノダンス,967
-30,30,ダンスロボットダンス,1057
-30,29.75,ミラクルペイント,1437
-30,30.125,KING,1251
-29,29,テレキャスタービーボーイ,898
-29,29.25,ナンセンス文学,1180
-29,28.75,リモコン,1206
-29,28.875,神のまにまに,1111
-29,29.25,エイリアンエイリアン,1361
-29,29.375,嗚呼、素晴らしきニャン生,1374
-30,29.875,命に嫌われている,979
-30,29.875,夜に駆ける,1140
-29,29.125,ベノム,1138
-29,29.125,ヴィラン,1154
-29,29.375,フォニイ,1244
-29,28.75,とても素敵な六月でした,1491
-30,30.125,magic number,988
-29,29,needLe,1029
-29,29.25,Ready Steady,667
-29,29.5,シネマ,800
-29,29.125,Flyer!,1083
-29,29,月光,1159
-29,29,セカイはまだ始まってすらいない,1027
-29,29.25,ニジイロストーリーズ,1054
-29,29.375,88☆彡,1188
-29,29,携帯恋話,1131
-29,29.25,ジャックポットサッドガール,767
-29,29.125,Be The MUSIC!,1247
-30,30,裏表ラバーズ,1151
-30,30,ワールズエンド・ダンスホール,1044
-30,30.25,花を唄う,878
-30,30.375,しっくおぶはうす！,1313
-30,30.125,ラストスコア,1190
-30,29.75,マトリョシカ,1104
-30,29.75,ピアノ×フォルテ×スキャンダル,1142
-30,30.125,ONESELF,1163
-30,30.25,SnowMix♪,1441
-30,30,レイニースノードロップ,1495
-30,29.875,METEOR,1323
-31,30.75,魔法みたいなミュージック！,1271
-30,30,エターナルアリア,1364
-30,30.125,スターダストメドレー,1366
-30,30.125,Decade,1057
-30,30.125,Calc.,1295
-30,29.875,アトラクトライト,1455
-30,30.25,ミルククラウン・オン・ソーネチカ,1226
-31,30.875,Happy Halloween,987
-30,29.875,ダーリンダンス,912
-31,30.875,気まぐれメルシィ,1465
-30,29.875,劣等上等,952
-30,30,夜咄ディセイブ,1311
-31,30.75,悪魔の踊り方,938
-30,30,フェレス,1397
-30,30,シャンティ,1187
-30,30.25,グッバイ宣言,1259
-31,31,ネトゲ廃人シュプレヒコール,1463
-31,30.875,おこちゃま戦争,1394
-31,31,ジェヘナ,1253
-30,30.375,ノンブレス・オブリージュ,1203
-31,30.75,コスモスパイス,1092
-30,30.25,サラマンダー,1454
-30,29.875,ステラ,1190
-31,30.525,霽れを待つ,1160
-31,30.75,流星のパルス,1123
-30,30.125,STAGE OF SEKAI,1156
-30,30.125,てらてら,1262
-30,30,Voices,1237
-30,30.125,the WALL,1019
-30,30.375,フレー,1328
-30,30.375,パラソルサイダー,880
-31,30.75,ももいろの鍵,1187
-30,29.875,チームメイト,1090
-30,30.25,RAD DOGS,1197
-30,30,Awake Now,884
-30,29.875,下剋上,1245
-30,30.25,Glory Steady Go!,875
-31,31,Mr. Showtime,1497
-30,30.125,悔やむと書いてミライ,973
-31,30.75,限りなく灰色へ,849
-30,29.75,ザムザ,937
-31,30.875,ジャンキーナイトタウンオーケストラ,1374
-31,30.75,ローリンガール,1396
-31,31.333,グリーンライツ・セレナーデ,1174
-31,31,そうだった！！,1297
-31,30.75,右肩の蝶,1315
-31,31.333,君色マリンスノウ,1415
-31,30.875,未完成讃歌,1585
-31,31.333,フロイライン＝ビブリォチカ,1456
-31,30.875,アンハッピーリフレイン,1353
-31,30.875,トラッシュ・アンド・トラッシュ！,1181
-31,30.875,Vampire's ∞ pathoS,1100
-31,31.333,私の恋はヘルファイア,1638
-31,31.333,カゲロウデイズ,1404
-31,31.333,地球最後の告白を,1164
-31,30.75,きゅうくらりん,1148
-31,31.333,オルターエゴ,1557
-31,31.166,エゴイスト,1548
-31,30.75,脳内革命ガール,1269
-31,31.166,ぼうけんのしょがきえました！,1092
-31,31.166,脱法ロック,1145
-31,31,チュルリラ・チュルリラ・ダッダッダ！,1401
-31,31,ポジティブ☆ダンスタイム,1154
-31,31.333,フィクサー,1118
-31,31.166,エゴロック,1277
-31,31.333,ビターチョコデコレーション,1377
-31,30.75,アイデンティティ,1489
-31,31.333,徳川カップヌードル禁止令,1241
-31,30.875,モア！ジャンプ！モア！,1257
-31,31,天使のクローバー,1235
-31,31,ショウタイム・ルーラー,1063
-31,30.75,にっこり^^調査隊のテーマ,1195
-31,31.166,ロウワー,850
-31,31,Iなんです,1066
-31,30.75,キティ,982
-32,31.833,千本桜,1257
-32,32,Brand New Day,1316
-32,32,拝啓ドッペルゲンガー,1654
-33,32.75,初音天地開闢神話,2021
-32,32,脳漿炸裂ガール,1500
-32,32,フューチャー・イヴ,1628
-32,32,インビジブル,1436
-32,32.25,星界ちゃんと可不ちゃんのおつかい合騒曲,1626
-32,31.666,テオ,1221
-32,32.25,ヒバナ -Reloaded-,1060
-33,32.75,ロストワンの号哭,1157
-33,33,ゴーストルール,1473
-32,32,セツナトリップ,1370
-32,31.833,ドクター＝ファンクビート,1198
-32,31.833,チルドレンレコード,1502
-32,32,トンデモワンダーズ,1224
-32,31.666,バグ,1343
-34,34,初音ミクの激唱,1742
-33,33,ぼくらの16bit戦争,1521
-34,34,腐れ外道とチョコレゐト,1763
-35,35,六兆年と一夜物語,1288
-35,35,マシンガンポエムドール,1819
-34,34,ÅMARA(大未来電脳),1589
-35,35,初音ミクの消失,1666
-35,35,エンドマークに希望と涙を添えて,1948
-36,36,the EmpErroR,1593
-35,35,Don't Fight The Music,1888
-37,37,What's up? Pop!,2362
-37,37.25,ヤミナベ!!!!,2015
-37,36.75,人生,2242
-28,28.125,我らステインバスターズ！,810
-31,30.875,新人類,1298
-31,31.125,ずんだパーリナイ,1522
-30,30.25,Disco No.39,1115
-28,28.125,サマータイムレコード,1404
-29,29.25,リアライズ,851
-27,27,キラピピ★キラピカ,909
-28,28,ボトルケーキ,759
-26,25.75,心做し,832
-30,30.25,ブループラネット,1357
-31,31,HERO,1278
-32,32,CIRCUS PANIC!!!,1239
-29,29.375,白い雪のプリンセスは,1478
-28,28.125,Un-Lock,1069
-28,28,ラッキー☆オーブ,919
-29,28.75,NEO,988
-29,29.375,アイムマイン,1189
-29,29.25,天樂,1554
-29,28.75,まにまに,1014
-27,27,メランコリック,1100
-28,28,豚になってyeah yeah,778
-27,27.25,恋は戦争,1262
-29,29,デビルじゃないもん,879
-31,30.75,すきなことだけでいいです,1223
-27,27,番凩,892
-29,29.25,神っぽいな,1162
-28,28.125,Dear,1233
-28,28.25,CR詠ZY,728
-29,29,Cool Me Down,1250
-29,29,悪役にキスシーンを,1188
-30,29.75,我儘姫,1188
-28,27.75,purpose,812
-29,28.75,はぐ,983
-26,26.4,トワイライトライト,619
-30,29.875,春嵐,1184
-31,30.75,ARQETYPE,951
-27,26.6,On&On,859
-30,29.75,キュートなカノジョ,1208
-29,28.875,フィラメントフィーバー,952
-30,29.75,さよならプリンセス,1131
-28,27.875,Beyond the way,900
-30,29.875,ショウタイム×オーディエンス,1220
-30,29.875,難聴系男子が倒せない,1234
-30,30.125,オーバーコード,1253
-30,30,スロウダウナー,1418
-29,29,初めての恋が終わる時,995
-29,28.625,金木犀,899
-30,30,一千光年,1141
-28,27.875,強風オールバック,955
-31,30.875,ヒアソビ,1116
-28,28,エンヴィーベイビー,1251
-28,27.875,『んっあっあっ。』,1071
-29,29.125,くうになる,945
-28,27.525,ハイドアンド・シーク,898
-32,32,folern,1486
-27,26.6,MOTTO!!!,1067
-32,31.833,Sage,1812
-31,30.875,心泥夢(syndrome),1383
-30,29.875,サイバーパンクデッドボーイ,1014
-33,33,MarbleBlue.,1460
-29,28.75,マーシャル・マキシマイザー,895
-30,30.125,え？あぁ、そう。,1028
-30,30,リレイアウター,1203
-29,28.875,おどロボ,1339
-31,30.75,世界を照らすテトラッド,1072
-26,26.2,ハッピーチートデー,817
-31,31,十六歳の心臓,1470
-31,31,limbo,958
-29,29,レグルス,1014
-28,27.875,古書屋敷殺人事件,974
-28,28.25,JUMPIN' OVER!,863
-27,27,ラフトレイン,920
-28,27.875,インテグラル,868
-28,28.125,ド屑,817
-28,28.125,明鏡止水,938
-26,26,ハジメテノオト,639
-27,27.125,flos,893
-29,28.75,アコトバ,857
-29,29,幽光、1/fのゆらめき,877
-33,32.75,嬢王,1456
-28,27.875,1000年生きてる,757
-29,29,幾望の月,998
-27,27.125,blender,781
-29,28.875,えれくとりっく・えんじぇぅ,1176
-29,29.25,レッドランドマーカー,1105
-29,28.875,あいのうた,1064
-28,27.75,ガーネットの涙,904
-28,28,だんだん早くなる,918
-28,27.875,私は雨,918
-28,28.125,酔いどれ知らず,1048
-29,29,(APPEND)酔いどれ知らず,1120
-34,34,おぎゃりないざー,1637
-37,37,(APPEND)おぎゃりないざー,2050
-31,31.333,シルバーコレクター,1178
-26,26,すれすれ,595
-27,27.375,烈火,948
-32,31.666,超最終鬼畜妹フランドール・Ｓ,1270
-35,35,(APPEND)超最終鬼畜妹フランドール・Ｓ,1914
-29,29.125,Bad Apple!! feat.SEKAI,1181
-30,30,Bad Apple!! feat.SEKAI,1328
-30,30,Help me, ERINNNNNN!!,1318
-32,32,(APPEND)Help me, ERINNNNNN!!,1564
-30,29.625,おちゃめ機能,1171
-31,30.875,ときめきジェットコースター,1234
-32,31.666,東京テディベア,1449
-34,34,(APPEND)東京テディベア,2024
-32,32.25,熱異常,1197
-31,31.166,I know 愛脳.,1119
-30,29.875,だめにんげんだ!,976
-30,30.375,オペラ！スペースオペラ！,1198
-30,30,(APPEND)オペラ！スペースオペラ！,1403
-28,28.375,抜錨,954
-28,28.25,きょうもハレバレ,1033
-28,28.25,Supernova,890
-27,27,(APPEND)Supernova,1016
-29,29,エンパープル,877
-29,29,(APPEND)エンパープル,1126
-30,30.125,合成するミライ,1094
-28,27.875,LEADER,940
-31,30.875,ポッピンキャンディ☆フィーバー！,1323
-28,28.125,ULTRA C,769
-34,34,ダイジョブですか？,1674
-37,37,(APPEND)ダイジョブですか？,2555
-31,31,成敗いたAAAAAす！,1199
-28,27.875,林檎売りの泡沫少女,1048
-29,28.875,メリーゴーラウンド,1024
-28,28.125,マインドブランド,1023
-31,31,イガク,1226
-30,29.875,あちこちデートさん,829
-36,36,(APPEND)Marbleblue.,2500
-35,35,(APPEND)Brand New Day,1894
-35,35,(APPEND)folern,1794
-35,35,(APPEND)Sage,1812
-35,35,(APPEND)嬢王,1972
-34,34,(APPEND)ヒバナ -Reloaded-,1351
-32,32,(APPEND)トンデモワンダーズ,1631
-32,32,(APPEND)Iなんです,1572
-32,32,(APPEND)NEO,1365
-31,31,(APPEND)テレキャスタービーボーイ,1159
-31,31,(APPEND)地球最後の告白を,1643
-31,31,(APPEND)一千光年,1496
-30,30,(APPEND)ステラ,1553
-30,30,(APPEND)ロウワー,1045
-30,30,(APPEND)ジェヘナ,1633
-30,30,(APPEND)フェレス,1744
-30,30,(APPEND)flyway,1396
-29,29,(APPEND)青く駆けろ！,1446
-29,29,(APPEND)威風堂々,1269
-29,29,(APPEND)モア！ジャンプ！モア！,1518
-29,29,(APPEND)みくみくにしてあげる♪【してやんよ】,1039
-29,29,(APPEND)トキヲ・ファンカ,997
-29,29,(APPEND)泡沫未来,1070
-29,29,(APPEND)Awake Now,1049
-29,29,(APPEND)DAYBREAK FRONTLINE,1352
-29,29,(APPEND)YY,1249
-29,29,(APPEND)レグルス,1268
-28,28,(APPEND)Hand in Hand,1020
-28,28,(APPEND)シネマ,992
-28,28,(APPEND)KING,1388
-28,28,(APPEND)Beat Eater,852
-27,27,(APPEND)いかないで,1212
-27,27,(APPEND)シャルル,1000
-27,27,(APPEND)小女レイ,1300
-27,27,(APPEND)心予報,1318
-27,27,(APPEND)グッバイ宣言,1233
-27,27,(APPEND)星を繋ぐ,1035
-26,26,(APPEND)Color of Drops,1028
-26,26,(APPEND)アイディスマイル,1216
-26,26,(APPEND)Happy Halloween,832
-26,26,(APPEND)ヴァンパイア,1433
-25,25,(APPEND)スイートマジック,1126
-25,25,(APPEND)potatoになっていく,703
-25,25,(APPEND)ラグトレイン,1038
-24,24,(APPEND)Tell Your World,1353`;
-let data2 = data.split('\n').map(item => item.split(',')).slice();
-data2.sort((a, b) => {
-    const numA = a[1];
-    const numB = b[1];
-    if (isNaN(numA)) return -1;
-    if (isNaN(numB)) return 1;
-    return numA - numB;
-});
-let yes = true;
-let total = 0;
-let potential = 0;
-let songname = '';
-let songID = 0;
-let result;
-let level;
-let add = 0;
-let songdata
-let newID
-var Right = document.createElement("div");
-Right.classList.add("right");
-Right.textContent = "기록";
-Right.id = "right"
-document.body.appendChild(Right);
-function getID(string){
-    return data2.findIndex((arr) => arr[2] === string)
-}
-if(localStorage.getItem("song") !== null && localStorage.getItem("song") !== undefined && localStorage.getItem("song") !== ''){
-    songdata = JSON.parse(localStorage.getItem("song"));
-}
-if(songdata){
-    let songdata2 = new Array(1000).fill(0).map(() => new Array(11).fill(0))
-    songdata.forEach(item => {
-        if(item[1] !== 0){
-            newID = getID(item[1])
-            songdata2[newID] = item
-            if(Number(item[7])>=9800000){
-                songdata2[newID][10] = (Number(data2[newID][1]) + Number((item[7] - 9800000)/100000)).toFixed(2);
-            }
-            else{
-                songdata2[newID][10] = (Number(data2[newID][1]) - 2 + Number((item[7] - 9500000)/150000)).toFixed(2);
+    let allSongs = [];
+    let userRecords = JSON.parse(localStorage.getItem('pjsekai_records')) || {};
+    let currentSong = null;
+    let currentLang = 'ko';
+
+    const i18n = {
+        ko: { title: "계산기", filter: "난이도 필터", save: "결과 등록하기", reset: "초기화", history: "등록된 기록", export: "내보내기", import: "가져오기", delete: "삭제", load: "불러오기", alertSave: "기록이 저장되었습니다.", alertTotal: "노트 수가 총합을 초과했습니다!", alertImport: "데이터를 성공적으로 가져왔습니다.", confirmDel: "삭제하시겠습니까?" },
+        en: { title: "Calculator", filter: "Level Filter", save: "Save Record", reset: "Reset", history: "History", export: "Export", import: "Import", delete: "Del", load: "Load", alertSave: "Record saved!", alertTotal: "Notes exceed total count!", alertImport: "Import successful.", confirmDel: "Delete this record?" },
+        ja: { title: "計算機", filter: "難易度フィルタ", save: "記録を保存", reset: "リセット", history: "登録済み記録", export: "書き出し", import: "読み込み", delete: "削除", load: "呼出", alertSave: "記録を保存しました。", alertTotal: "ノーツ数が合計を超えています！", alertImport: "インポートが完了しました。", confirmDel: "削除しますか？" }
+    };
+
+    function setLang(lang) {
+        currentLang = lang;
+        document.querySelectorAll('.btn-lang').forEach(b => b.classList.remove('active'));
+        event?.target.classList.add('active');
+        
+        document.getElementById('t-title').innerText = i18n[lang].title;
+        document.getElementById('t-filter').innerText = i18n[lang].filter;
+        document.getElementById('t-save').innerText = i18n[lang].save;
+        document.getElementById('t-reset').innerText = i18n[lang].reset;
+        document.getElementById('t-history').innerText = i18n[lang].history;
+        document.getElementById('t-export').innerText = i18n[lang].export;
+        document.getElementById('t-import').innerText = i18n[lang].import;
+        
+        filterSongs();
+        renderHistory();
+    }
+
+    function getJacketUrl(assetName) {
+        return `https://storage.sekai.best/sekai-jp-assets/music/jacket/${assetName}/${assetName}.webp`;
+    }
+
+    async function fetchSongData() {
+        try {
+            const [musicsRes, diffsRes] = await Promise.all([
+                fetch('https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/master/musics.json'),
+                fetch('https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/master/musicDifficulties.json')
+            ]);
+            const musics = await musicsRes.json();
+            const difficulties = await diffsRes.json();
+
+            allSongs = difficulties.map(diff => {
+                const music = musics.find(m => m.id === diff.musicId);
+                return {
+                    id: `${diff.musicId}-${diff.musicDifficulty}`,
+                    name: music ? music.title : 'Unknown',
+                    level: diff.playLevel,
+                    difficulty: diff.musicDifficulty.toUpperCase(),
+                    totalNotes: diff.totalNoteCount,
+                    jacket: music ? getJacketUrl(music.assetbundleName) : ''
+                };
+            });
+
+            initApp();
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main-content').style.display = 'grid';
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function initApp() {
+        const lvSelect = document.getElementById('level-select');
+        const levels = [...new Set(allSongs.map(s => s.level))].sort((a, b) => a - b);
+        lvSelect.innerHTML = '<option value="all">All Levels</option>' + levels.map(lv => `<option value="${lv}">${lv}</option>`).join('');
+        lvSelect.onchange = filterSongs;
+        setLang('ko');
+    }
+
+    function filterSongs() {
+        const lv = document.getElementById('level-select').value;
+        const keyword = document.getElementById('song-search-input').value.toLowerCase();
+        const listDiv = document.getElementById('song-list');
+        const filtered = allSongs.filter(s => (lv === 'all' || s.level == lv) && s.name.toLowerCase().includes(keyword));
+
+        listDiv.innerHTML = filtered.map(s => `
+            <div class="song-option" onclick="selectSong('${s.id}')">
+                <img src="${s.jacket}" loading="lazy" onerror="this.src='https://placehold.co/50?text=?'">
+                <div class="song-option-info">
+                    <div style="font-weight:bold">${s.name}</div>
+                    <span style="color:var(--primary)">Lv.${s.level}</span> | <span>${s.difficulty}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function selectSong(id) {
+        currentSong = allSongs.find(s => s.id === id);
+        document.getElementById('selected-song-ui').style.display = 'flex';
+        document.getElementById('selected-jacket').src = currentSong.jacket;
+        document.getElementById('selected-title').innerText = currentSong.name;
+        document.getElementById('selected-diff').innerText = `Lv.${currentSong.level} ${currentSong.difficulty}`;
+        resetInputs();
+    }
+
+    function resetInputs() {
+        if (!currentSong) return;
+        document.getElementById('perf').value = currentSong.totalNotes;
+        ['great', 'good', 'bad', 'miss'].forEach(id => document.getElementById(id).value = 0);
+        calculate();
+    }
+
+    function calculate() {
+        if (!currentSong) return { score: 0, rating: 0 };
+
+        let g = +document.getElementById('great').value;
+        let gd = +document.getElementById('good').value;
+        let b = +document.getElementById('bad').value;
+        let m = +document.getElementById('miss').value;
+        const total = currentSong.totalNotes;
+
+        // --- 자동 보정 로직 시작 ---
+        if (g + gd + b + m > total) {
+            // 방금 수정한 필드가 무엇인지 찾아내어 최대치로 고정하기 위해
+            // 현재 활성화된 input 요소를 확인합니다.
+            const activeEl = document.activeElement;
+            if (activeEl && activeEl.type === 'number') {
+                const otherSums = (g + gd + b + m) - (+activeEl.value);
+                activeEl.value = total - otherSums;
+                
+                // 보정된 값으로 변수 다시 할당
+                g = +document.getElementById('great').value;
+                gd = +document.getElementById('good').value;
+                b = +document.getElementById('bad').value;
+                m = +document.getElementById('miss').value;
             }
         }
-    })
-    songdata = songdata2
-    let Newsongdata = songdata.slice()
-    Newsongdata.sort((a, b) => b[10] - a[10]);
-    let repeat = 0
-    Newsongdata.forEach( item => {
-    if(item[1] !== 0 && item[1] !== null){
-        if(repeat < 51){
-            add += parseFloat(item[10])
-            repeat += 1
+        // --- 자동 보정 로직 끝 ---
+
+        const p = total - (g + gd + b + m);
+        document.getElementById('perf').value = p;
+
+        // 점수 계산 (보정 후 p는 최소 0임이 보장됨)
+        const score = Math.floor(((p + g/2 + gd/4 + b/8) / total) * 10000000);
+        document.getElementById('result-score').innerText = score.toLocaleString();
+
+        let rating = 0;
+        const baseLevel = parseFloat(currentSong.level); 
+        if (score >= 9800000) { 
+            rating = baseLevel + (score - 9800000) / 100000; 
+        } else { 
+            rating = (baseLevel - 2) + (score - 9500000) / 150000; 
         }
-        let container = document.createElement("div");
-        let label = document.createElement("label");
-        label.textContent = item[1] + "(" + item[7] + ") => " + item[10];
-        container.classList.add("container");
-        let load = document.createElement("button");
-        let deletebutton = document.createElement("button");
-        load.textContent = "불러오기";
-        load.setAttribute("data-ID", getID(item[1]))
-        load.onclick = function() {
-            document.getElementById("level").value = data2[parseInt(this.getAttribute("data-ID"))][0];
-            updateSecondSelect(document.getElementById("level"))
-            document.getElementById("song").value = parseInt(this.getAttribute("data-ID"));
-            SongSelected(document.getElementById("song"))
-            document.getElementById('Perfect').value = songdata[parseInt(this.getAttribute("data-ID"))][2];
-            document.getElementById('Great').value = songdata[parseInt(this.getAttribute("data-ID"))][3];
-            document.getElementById('Good').value = songdata[parseInt(this.getAttribute("data-ID"))][4];
-            document.getElementById('Bad').value = songdata[parseInt(this.getAttribute("data-ID"))][5];
-            document.getElementById('Miss').value = songdata[parseInt(this.getAttribute("data-ID"))][6];
-            click()
-        }
-        deletebutton.textContent = "삭제"
-        deletebutton.setAttribute("data-ID", getID(item[1]))
-        deletebutton.onclick = function() {
-        if(confirm("정말로 이 기록을 삭제하시겠습니까?")){
-            deletebutton.parentNode.remove();
-            songdata[parseInt(this.getAttribute("data-ID"))].fill(null);
-            localStorage.setItem("song",JSON.stringify(songdata, (key, value) => value === null ? 0 : value))
-        }
-        }
-        container.appendChild(label);
-        container.appendChild(load);
-        container.appendChild(deletebutton);
-        document.getElementById("right").appendChild(container);
+        
+        if (rating < 0) rating = 0;
+
+        document.getElementById('potential-val').innerText = `Rating: ${rating.toFixed(2)}`;
+        return { score, rating };
     }
-})}
-else{
-    songdata = new Array(1000).fill(0).map(() => new Array(11).fill(0))
-}
-document.getElementById("sektential").innerText = "top50 평균치 = " + add/50;
-const button = document.getElementById("button");
-const secondSelect = document.getElementById("song");
-document.getElementById('result').innerText = '';
-document.getElementById('potential').innerText = '';
-function click() {
-  let Perfect = document.getElementById('Perfect').value;
-  let Great = document.getElementById('Great').value;
-  let Good = document.getElementById('Good').value;
-  let Bad = document.getElementById('Bad').value;
-  let Miss = document.getElementById('Miss').value;
-  result = Math.floor((Number(Perfect) + Number(Great)/2 + Number(Good)/4 + Number(Bad)/8)/(Number(Perfect) + Number(Great) + Number(Good) + Number(Bad) + Number(Miss)) * 10000000);
-  if(result < songdata[songID][7]){
-    document.getElementById("result").innerText = result + " (" + (result - songdata[songID][7]) + ")"
-  }
-  else{
-    document.getElementById("result").innerText = result + " (+" + (result - songdata[songID][7]) + ")"
-  }
-  document.getElementById("confirm").disabled = false;
-  if(Number(result)>=9800000){
-    document.getElementById("potential").innerText = (Number(potential) + Number((result - 9800000)/100000)).toFixed(2);
-  }
-  else{
-    document.getElementById("potential").innerText = (Number(potential) - 2 + Number((result - 9500000)/150000)).toFixed(2);
-  }
-}
 
-function updateSecondSelect(select) {
-    yes = true;
-    level = select.value;
-    secondSelect.innerHTML = '';
-    let repeat = 0;
-    data2.forEach(row => {
-        if(data2[repeat][0] === level){
-            secondSelect.add(new Option(row[2] + '(' + row[1] + ')', repeat));
+    function saveRecord() {
+        if (!currentSong) return;
+        const { score, rating } = calculate();
+        userRecords[currentSong.id] = {
+            name: currentSong.name,
+            diff: currentSong.difficulty,
+            score: score,
+            rating: rating.toFixed(2),
+            details: { 
+                great: +document.getElementById('great').value, 
+                good: +document.getElementById('good').value, 
+                bad: +document.getElementById('bad').value, 
+                miss: +document.getElementById('miss').value 
+            },
+            date: new Date().toLocaleDateString()
+        };
+        
+        localStorage.setItem('pjsekai_records', JSON.stringify(userRecords));
+        renderHistory();
+        alert(i18n[currentLang].alertSave);
+    }
+
+    function loadRecord(id) {
+        const record = userRecords[id];
+        if (!record) return;
+        selectSong(id);
+        if (record.details) {
+            document.getElementById('great').value = record.details.great;
+            document.getElementById('good').value = record.details.good;
+            document.getElementById('bad').value = record.details.bad;
+            document.getElementById('miss').value = record.details.miss;
         }
-        repeat += 1;
-    });
-    SongSelected(document.getElementById("song"))
-}
-
-function SongSelected(select) {
-    songID = select.value;
-    potential = data2[songID][1];
-    songname = data2[songID][2];
-    total = data2[songID][3];
-    document.getElementById('Perfect').value = total;
-    document.getElementById('Great').value = 0;
-    document.getElementById('Good').value = 0;
-    document.getElementById('Bad').value = 0;
-    document.getElementById('Miss').value = 0;
-    document.getElementById("Great").disabled = false;
-    document.getElementById("Good").disabled = false;
-    document.getElementById("Bad").disabled = false;
-    document.getElementById("Miss").disabled = false;
-    document.getElementById("reset").disabled = false;
-    document.getElementById("confirm").disabled = true;
-    document.getElementById('result').innerText = '';
-    document.getElementById('potential').innerText = '';
-    click()
-}
-
-function Input(input){
-    if(input.value < 0){
-        input.value = 0;
+        calculate();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    document.getElementById('Perfect').value = total - document.getElementById('Great').value - document.getElementById('Good').value - document.getElementById('Bad').value - document.getElementById('Miss').value;
-    if(total - document.getElementById('Great').value - document.getElementById('Good').value - document.getElementById('Bad').value - document.getElementById('Miss').value < 0){
-        input.value = Number(input.value) + Number(document.getElementById('Perfect').value);
-        document.getElementById('Perfect').value = 0;
+
+    function renderHistory() {
+        const list = document.getElementById('history-list');
+        const records = Object.entries(userRecords)
+            .map(([id, data]) => ({ id, ...data }))
+            .sort((a, b) => b.rating - a.rating);
+        
+        list.innerHTML = records.map(r => {
+            const songData = allSongs.find(s => s.id === r.id);
+            const jacketUrl = songData ? songData.jacket : 'https://placehold.co/45?text=?';
+
+            return `
+                <div class="history-item">
+                    <img src="${jacketUrl}" onerror="this.src='https://placehold.co/45?text=?'">
+                    <div class="history-info">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <strong>${r.name}</strong>
+                            <span style="font-size: 10px; color: #666;">${r.date || ''}</span>
+                        </div>
+                        <small>[${r.diff}]</small><br>
+                        <span>${parseInt(r.score).toLocaleString()}</span> | 
+                        <span style="color:var(--secondary)">${r.rating}</span>
+                    </div>
+                    <div style="display:flex; gap:3px;">
+                        <button class="btn-load" style="font-size:11px; padding:5px;" onclick="loadRecord('${r.id}')">${i18n[currentLang].load}</button>
+                        <button class="btn-danger" style="font-size:11px; padding:5px;" onclick="deleteRecord('${r.id}')">${i18n[currentLang].delete}</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        const top50 = records.slice(0, 50);
+        const avg = top50.reduce((acc, cur) => acc + parseFloat(cur.rating), 0) / (top50.length || 1);
+        document.getElementById('top50-avg').innerText = `Top 50 Avg: ${avg.toFixed(3)}`;
     }
-    click()
-}
 
-function reset(){
-    document.getElementById('Perfect').value = total;
-    document.getElementById('Great').value = 0;
-    document.getElementById('Good').value = 0;
-    document.getElementById('Bad').value = 0;
-    document.getElementById('Miss').value = 0;
-    document.getElementById("confirm").disabled = true;
-    document.getElementById('result').innerText = '';
-    document.getElementById('potential').innerText = '';
-    click()
-}
-
-function Confirm(){
-    if (confirm("이 결과를 등록하시겠습니까?")){
-    songdata[songID][0] = document.getElementById("song").value
-    songdata[songID][1] = songname
-    songdata[songID][2] = document.getElementById("Perfect").value
-    songdata[songID][3] = document.getElementById("Great").value
-    songdata[songID][4] = document.getElementById("Good").value
-    songdata[songID][5] = document.getElementById("Bad").value
-    songdata[songID][6] = document.getElementById("Miss").value
-    songdata[songID][7] = result
-    songdata[songID][8] = potential
-    songdata[songID][9] = level
-    songdata[songID][10] = document.getElementById('potential').innerText
-    localStorage.setItem("song",JSON.stringify(songdata, (key, value) => value === null ? 0 : value));
-    alert("등록이 완료되었습니다. 새로고침 후 적용됩니다.")
-    window.location.reload()
+    function deleteRecord(id) {
+        if (confirm(i18n[currentLang].confirmDel)) {
+            delete userRecords[id];
+            localStorage.setItem('pjsekai_records', JSON.stringify(userRecords));
+            renderHistory();
+        }
     }
-}
 
+    // Export / Import
+    function exportData() {
+        const dataStr = JSON.stringify(userRecords, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `sekai_records_${new Date().getTime()}.json`;
+        link.click();
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const imported = JSON.parse(e.target.result);
+                userRecords = { ...userRecords, ...imported };
+                localStorage.setItem('pjsekai_records', JSON.stringify(userRecords));
+                renderHistory();
+                alert(i18n[currentLang].alertImport);
+            } catch (err) {
+                alert("Error importing file.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    fetchSongData();
 </script>
-</div>
-</div>
+
 </body>
 </html>
