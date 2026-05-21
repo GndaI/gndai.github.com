@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="no-referrer">
+    <meta name="referrer" content="no-referrer">    
     <title>Sekai-Score Calculator</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -110,6 +110,14 @@
             background: var(--bg-dark); display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 9999;
         }
+        .diff-EASY { color: #33ccff; }
+        .diff-NORMAL { color: #22ee88; }
+        .diff-HARD { color: #ffbb00; }
+        .diff-EXPERT { color: #ff4466; }
+        .diff-MASTER { color: #bb33ff; }
+        .diff-APPEND { color: #ff77cc; }
+        .lv-bold { font-weight: bold; }
+        
         .spinner { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -181,10 +189,25 @@
     let currentSong = null;
     let currentLang = 'ko';
 
+    // image_dd08b8.png에 있는 정보를 바탕으로 수정된 코드입니다.
+    const supabaseUrl = 'https://qzblhynagyfilecdenwm.supabase.co'; // 화면 상단에 있는 주소
+    const supabaseKey = '여기에 API Keys에서 복사한 anon 키를 넣으세요'; 
+
+    //const supabase = exports.supabase.createClient(supabaseUrl, supabaseKey);
+
     const i18n = {
         ko: { title: "계산기", filter: "난이도 필터", save: "결과 등록하기", reset: "초기화", history: "등록된 기록", export: "내보내기", import: "가져오기", delete: "삭제", load: "불러오기", alertSave: "기록이 저장되었습니다.", alertTotal: "노트 수가 총합을 초과했습니다!", alertImport: "데이터를 성공적으로 가져왔습니다.", confirmDel: "삭제하시겠습니까?" },
         en: { title: "Calculator", filter: "Level Filter", save: "Save Record", reset: "Reset", history: "History", export: "Export", import: "Import", delete: "Del", load: "Load", alertSave: "Record saved!", alertTotal: "Notes exceed total count!", alertImport: "Import successful.", confirmDel: "Delete this record?" },
         ja: { title: "計算機", filter: "難易度フィルタ", save: "記録を保存", reset: "リセット", history: "登録済み記録", export: "書き出し", import: "読み込み", delete: "削除", load: "呼出", alertSave: "記録を保存しました。", alertTotal: "ノーツ数が合計を超えています！", alertImport: "インポートが完了しました。", confirmDel: "削除しますか？" }
+    };
+
+    const difficultyOrder = {
+        'EASY': 1,
+        'NORMAL': 2,
+        'HARD': 3,
+        'EXPERT': 4,
+        'MASTER': 5,
+        'APPEND': 6
     };
 
     function setLang(lang) {
@@ -205,17 +228,18 @@
     }
 
     function getJacketUrl(assetName) {
-        return `https://storage.sekai.best/sekai-jp-assets/music/jacket/${assetName}/${assetName}.webp`;
+        return `./assets/jackets/${assetName}.webp`;
+        
     }
 
     async function fetchSongData() {
         try {
-            const [musicsRes, diffsRes] = await Promise.all([
-                fetch('https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/master/musics.json'),
-                fetch('https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/master/musicDifficulties.json')
+            const [musicRes, diffRes] = await Promise.all([
+                fetch('./assets/musics.json'),
+                fetch('./assets/musicDifficulties.json')
             ]);
-            const musics = await musicsRes.json();
-            const difficulties = await diffsRes.json();
+            const musics = await musicRes.json();
+            const difficulties = await diffRes.json();
 
             allSongs = difficulties.map(diff => {
                 const music = musics.find(m => m.id === diff.musicId);
@@ -249,14 +273,26 @@
         const lv = document.getElementById('level-select').value;
         const keyword = document.getElementById('song-search-input').value.toLowerCase();
         const listDiv = document.getElementById('song-list');
-        const filtered = allSongs.filter(s => (lv === 'all' || s.level == lv) && s.name.toLowerCase().includes(keyword));
+        
+        // 1. 필터링
+        let filtered = allSongs.filter(s => 
+            (lv === 'all' || s.level == lv) && 
+            s.name.toLowerCase().includes(keyword)
+        );
 
+        // 2. 난이도 순서로 정렬 (이지 -> 노말 -> 하드 -> 익스 -> 마스터 -> 어펜드)
+        filtered.sort((a, b) => {
+            return difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty];
+        });
+
+        // 3. 화면 렌더링
         listDiv.innerHTML = filtered.map(s => `
             <div class="song-option" onclick="selectSong('${s.id}')">
                 <img src="${s.jacket}" loading="lazy" onerror="this.src='https://placehold.co/50?text=?'">
                 <div class="song-option-info">
                     <div style="font-weight:bold">${s.name}</div>
-                    <span style="color:var(--primary)">Lv.${s.level}</span> | <span>${s.difficulty}</span>
+                    <span class="lv-bold diff-${s.difficulty}">Lv.${s.level}</span> | 
+                    <span class="diff-${s.difficulty}">${s.difficulty}</span>
                 </div>
             </div>
         `).join('');
@@ -264,10 +300,18 @@
 
     function selectSong(id) {
         currentSong = allSongs.find(s => s.id === id);
-        document.getElementById('selected-song-ui').style.display = 'flex';
+        const ui = document.getElementById('selected-song-ui');
+        const diffDisplay = document.getElementById('selected-diff');
+        
+        ui.style.display = 'flex';
         document.getElementById('selected-jacket').src = currentSong.jacket;
         document.getElementById('selected-title').innerText = currentSong.name;
-        document.getElementById('selected-diff').innerText = `Lv.${currentSong.level} ${currentSong.difficulty}`;
+        
+        // 클래스를 초기화하고 새로 부여합니다
+        diffDisplay.className = `diff-${currentSong.difficulty}`;
+        diffDisplay.style.fontSize = "0.8em";
+        diffDisplay.innerText = `Lv.${currentSong.level} ${currentSong.difficulty}`;
+        
         resetInputs();
     }
 
@@ -371,7 +415,6 @@
         list.innerHTML = records.map(r => {
             const songData = allSongs.find(s => s.id === r.id);
             const jacketUrl = songData ? songData.jacket : 'https://placehold.co/45?text=?';
-
             return `
                 <div class="history-item">
                     <img src="${jacketUrl}" onerror="this.src='https://placehold.co/45?text=?'">
@@ -380,7 +423,7 @@
                             <strong>${r.name}</strong>
                             <span style="font-size: 10px; color: #666;">${r.date || ''}</span>
                         </div>
-                        <small>[${r.diff}]</small><br>
+                        <small class="diff-${r.diff}">[${r.diff}]</small><br>
                         <span>${parseInt(r.score).toLocaleString()}</span> | 
                         <span style="color:var(--secondary)">${r.rating}</span>
                     </div>
@@ -391,7 +434,6 @@
                 </div>
             `;
         }).join('');
-
         const top50 = records.slice(0, 50);
         const avg = top50.reduce((acc, cur) => acc + parseFloat(cur.rating), 0) / (top50.length || 1);
         document.getElementById('top50-avg').innerText = `Top 50 Avg: ${avg.toFixed(3)}`;
