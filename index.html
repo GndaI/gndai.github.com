@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">    
-    <title>Sekai-Score Calculator</title>
+    <title>Sekai-Score Professional</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -24,16 +24,61 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            padding: 10px;
             min-height: 100vh;
+            box-sizing: border-box;
         }
 
-        .lang-switcher {
-            margin-bottom: 15px;
+        /* 상단 유틸리티바 */
+        .top-bar {
+            width: 100%;
+            max-width: 1200px;
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
+        .lang-switcher { display: flex; gap: 5px; }
+
+        .stat-bar {
+            width: 100%;
+            max-width: 1200px;
+            background: linear-gradient(90deg, #1e1e1e, #2a2a2a);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+            border: 1px solid var(--primary);
+            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.2);
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* 4. 모바일 탭 메뉴 (모바일 전용) */
+        .mobile-tabs {
+            display: none;
+            width: 100%;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        /* 반응형 레이아웃 컨테이너 */
         .main-container {
             display: none;
             grid-template-columns: 1fr 1fr;
@@ -42,115 +87,168 @@
             width: 100%;
         }
 
-        @media (max-width: 900px) {
-            .main-container { grid-template-columns: 1fr; }
-        }
-
         .card {
             background: var(--card-bg);
             border-radius: 15px;
-            padding: 25px;
+            padding: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             border: 1px solid var(--border);
+            box-sizing: border-box;
         }
 
-        h1, h2 { margin-top: 0; color: var(--primary); }
+        h1, h2 { margin-top: 0; color: var(--primary); font-size: 1.5rem; }
 
-        /* UI Elements */
-        #song-search-input, select, input {
-            width: 100%; padding: 12px; margin: 8px 0;
+        /* UI 필터 컴포넌트 */
+        .filter-section { background: #181818; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #252525; }
+        .range-group { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .range-group input { margin: 0; }
+        
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .checkbox-group label {
+            display: flex; align-items: center; gap: 4px; background: #2a2a2a; 
+            padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border);
+        }
+        .checkbox-group input[type="checkbox"] { width: auto; margin: 0; }
+
+        #song-search-input, select, input[type="text"], input[type="number"] {
+            width: 100%; padding: 10px; margin: 6px 0;
             background: #2a2a2a; border: 1px solid var(--border);
             color: white; border-radius: 8px; box-sizing: border-box;
         }
 
         .song-list-scroll {
-            max-height: 350px; overflow-y: auto;
-            border: 1px solid var(--border); border-radius: 8px; background: #181818;
+            max-height: 280px; overflow-y: auto;
+            border: 1px solid var(--border); border-radius: 8px; background: #141414;
         }
 
         .song-option {
-            display: flex; align-items: center; padding: 10px;
+            display: flex; align-items: center; padding: 8px;
             cursor: pointer; border-bottom: 1px solid #222; transition: 0.2s;
         }
-
         .song-option:hover { background: #333; }
-        .song-option img { width: 50px; height: 50px; border-radius: 4px; margin-right: 15px; object-fit: cover; }
+        .song-option img { width: 45px; height: 45px; border-radius: 4px; margin-right: 12px; object-fit: cover; }
+        .song-option-info { flex-grow: 1; }
+
+        /* 6. 일섭(JP Only) 곡 마킹 데코레이션 */
+        .badge-jp {
+            background: #ff0055; color: white; font-size: 10px; font-weight: bold;
+            padding: 2px 6px; border-radius: 4px; margin-left: 6px; display: inline-block; vertical-align: middle;
+        }
+        .title-main { font-weight: bold; font-size: 14px; }
+        .title-sub { font-size: 11px; color: #888; margin-top: 2px; }
 
         .selected-song-display {
             display: flex; gap: 15px; background: #252525;
-            padding: 15px; border-radius: 10px; margin-bottom: 15px; align-items: center;
+            padding: 12px; border-radius: 10px; margin-bottom: 15px; align-items: center;
         }
+        #selected-jacket { width: 70px; height: 70px; border-radius: 8px; background: #444; object-fit: cover; }
 
-        #selected-jacket { width: 80px; height: 80px; border-radius: 8px; background: #444; }
+        .input-group { display: flex; align-items: center; margin-bottom: 8px; }
+        .input-group label { width: 90px; font-weight: bold; font-size: 14px; }
 
-        .input-group { display: flex; align-items: center; margin-bottom: 10px; }
-        .input-group label { width: 100px; font-weight: bold; }
-
-        button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; margin: 2px; }
+        button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
         .btn-primary { background: var(--primary); color: #000; }
         .btn-danger { background: #ff4d4d; color: white; }
         .btn-load { background: #444; color: white; }
         .btn-lang { background: #333; color: #ccc; border: 1px solid #444; }
         .btn-lang.active { border-color: var(--primary); color: var(--primary); }
+        .btn-tab { background: #222; color: #aaa; width: 100%; padding: 12px; border-radius: 8px; font-size: 14px; border: 1px solid var(--border); }
+        .btn-tab.active { background: var(--primary); color: #000; border-color: var(--primary); }
 
         .result-box {
-            background: #000; padding: 15px; border-radius: 10px;
-            text-align: center; margin: 15px 0; border-left: 5px solid var(--primary);
+            background: #000; padding: 12px; border-radius: 10px;
+            text-align: center; margin: 12px 0; border-left: 5px solid var(--primary);
         }
+        #result-score { font-size: 22px; font-weight: bold; color: var(--primary); }
+        #potential-val { font-size: 16px; color: var(--secondary); }
 
-        #result-score { font-size: 24px; font-weight: bold; color: var(--primary); }
-        #potential-val { font-size: 18px; color: var(--secondary); }
-
-        .history-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 14px; gap: 12px; }
-        .history-item img { width: 45px; height: 45px; border-radius: 4px; }
-        .history-info { flex-grow: 1; }
+        .history-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; gap: 10px; }
+        .history-item img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
+        .history-info { flex-grow: 1; min-width: 0; }
+        .history-info strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         .loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-dark); display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 9999;
         }
-        .diff-EASY { color: #33ccff; }
-        .diff-NORMAL { color: #22ee88; }
-        .diff-HARD { color: #ffbb00; }
-        .diff-EXPERT { color: #ff4466; }
-        .diff-MASTER { color: #bb33ff; }
-        .diff-APPEND { color: #ff77cc; }
+        
+        /* 난이도 컬러 에셋 명시 */
+        .diff-EASY { color: #33ccff; } .diff-NORMAL { color: #22ee88; } .diff-HARD { color: #ffbb00; }
+        .diff-EXPERT { color: #ff4466; } .diff-MASTER { color: #bb33ff; } .diff-APPEND { color: #ff77cc; }
         .lv-bold { font-weight: bold; }
         
-        .spinner { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        .spinner { width: 45px; height: 45px; border: 4px solid #333; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 4. 미디어 쿼리 기반 반응형 인터페이스 (모바일 스택 앤 탭화) */
+        @media (max-width: 768px) {
+            .mobile-tabs { display: grid; }
+            .main-container { grid-template-columns: 1fr; }
+            .card-section { display: none; }
+            .card-section.active-tab { display: block; }
+        }
     </style>
 </head>
 <body>
 
-<div class="lang-switcher">
-    <button class="btn-lang active" onclick="setLang('ko')">한국어</button>
-    <button class="btn-lang" onclick="setLang('en')">English</button>
-    <button class="btn-lang" onclick="setLang('ja')">日本語</button>
+<div class="top-bar">
+    <div class="lang-switcher">
+        <button class="btn-lang active" onclick="setLang('ko')">한국어</button>
+        <button class="btn-lang" onclick="setLang('en')">English</button>
+        <button class="btn-lang" onclick="setLang('ja')">日本語</button>
+    </div>
+</div>
+
+<div class="stat-bar">
+    <div class="stat-item">
+        <span class="stat-label">Top 50 Avg Rating</span>
+        <span id="top50-avg" class="stat-value">0.000</span>
+    </div>
+</div>
+
+<div id="mobile-nav" class="mobile-tabs">
+    <button id="tab-btn-calc" class="btn-tab active" onclick="switchTab('calc')">계산기</button>
+    <button id="tab-btn-record" class="btn-tab" onclick="switchTab('record')">기록실</button>
 </div>
 
 <div id="loading" class="loading-overlay">
     <div class="spinner"></div>
-    <div id="loading-text">Loading Data...</div>
+    <div id="loading-text">Synchronizing Global Databases...</div>
 </div>
 
 <div id="main-content" class="main-container">
-    <div class="card">
+    <div class="card card-section active-tab" id="section-calc">
         <h1 id="t-title">계산기</h1>
         
         <div class="song-picker-container">
-            <label id="t-filter">난이도 필터</label>
-            <select id="level-select"></select>
-            <input type="text" id="song-search-input" placeholder="Search..." oninput="filterSongs()">
+            <div class="filter-section">
+                <label id="t-filter" style="font-size:13px; font-weight:bold; color:var(--primary);">난이도 범위 설정</label>
+                <div class="range-group">
+                    <input type="number" id="level-min" value="1" min="1" max="38" oninput="filterSongs()">
+                    <span>~</span>
+                    <input type="number" id="level-max" value="38" min="1" max="38" oninput="filterSongs()">
+                </div>
+                
+                <div class="checkbox-group" id="diff-checkboxes">
+                    <label><input type="checkbox" value="EASY" checked onchange="filterSongs()">EZ</label>
+                    <label><input type="checkbox" value="NORMAL" checked onchange="filterSongs()">NR</label>
+                    <label><input type="checkbox" value="HARD" checked onchange="filterSongs()">HD</label>
+                    <label><input type="checkbox" value="EXPERT" checked onchange="filterSongs()">EX</label>
+                    <label><input type="checkbox" value="MASTER" checked onchange="filterSongs()">MAS</label>
+                    <label><input type="checkbox" value="APPEND" checked onchange="filterSongs()">APD</label>
+                </div>
+            </div>
+
+            <input type="text" id="song-search-input" placeholder="곡 이름 검색..." oninput="filterSongs()">
             <div id="song-list" class="song-list-scroll"></div>
         </div>
 
-        <div class="selected-song-display" id="selected-song-ui" style="display:none;">
+        <div class="selected-song-display" id="selected-song-ui" style="display:none; margin-top:15px;">
             <img id="selected-jacket" src="" alt="jacket">
             <div class="selected-info-text">
-                <div id="selected-title" style="font-weight: bold;"></div>
-                <div id="selected-diff" style="font-size: 0.8em; color: var(--primary);"></div>
+                <div id="selected-title"></div>
+                <div id="selected-diff"></div>
             </div>
         </div>
 
@@ -160,23 +258,39 @@
         </div>
 
         <div id="input-fields">
-            <div class="input-group"><label>Perfect</label><input type="number" id="perf" readonly=""></div>
+            <div class="input-group"><label>Perfect</label><input type="number" id="perf" readonly></div>
             <div class="input-group"><label>Great</label><input type="number" id="great" value="0" oninput="calculate()"></div>
             <div class="input-group"><label>Good</label><input type="number" id="good" value="0" oninput="calculate()"></div>
             <div class="input-group"><label>Bad</label><input type="number" id="bad" value="0" oninput="calculate()"></div>
             <div class="input-group"><label>Miss</label><input type="number" id="miss" value="0" oninput="calculate()"></div>
         </div>
 
-        <button class="btn-primary" style="width: 100%;" id="t-save" onclick="saveRecord()">결과 등록하기</button>
-        <button class="btn-load" style="width: 100%;" id="t-reset" onclick="resetInputs()">초기화</button>
-        <div id="top50-avg" style="margin-top: 15px; text-align: center; color: #888;">Top 50 Avg: 0.000</div>
+        <button class="btn-primary" style="width: 100%; margin-top:10px;" id="t-save" onclick="saveRecord()">결과 등록하기</button>
+        <button class="btn-load" style="width: 100%; margin-top:5px;" id="t-reset" onclick="resetInputs()">초기화</button>
     </div>
 
-    <div class="card">
+    <div class="card card-section" id="section-record">
         <h2 id="t-history">등록된 기록</h2>
+        
+        <div class="filter-section">
+            <input type="text" id="history-search-input" placeholder="기록 내부 곡명 검색..." oninput="renderHistory()">
+            <div class="range-group">
+                <input type="number" id="history-lv-min" value="1" min="1" max="38" placeholder="최소Lv" oninput="renderHistory()">
+                <span>~</span>
+                <input type="number" id="history-lv-max" value="38" min="1" max="38" placeholder="최대Lv" oninput="renderHistory()">
+            </div>
+            <select id="history-sort-select" onchange="renderHistory()">
+                <option value="latest">최신 등록순</option>
+                <option value="rating-desc">레이팅 차순 (▼)</option>
+                <option value="rating-asc">레이팅 차순 (▲)</option>
+                <option value="level-desc">레벨 차순 (▼)</option>
+                <option value="level-asc">레벨 차순 (▲)</option>
+            </select>
+        </div>
+
         <div style="margin-bottom:15px; display:flex; gap:5px;">
-            <button class="btn-lang" id="t-export" onclick="exportData()">내보내기 (JSON)</button>
-            <button class="btn-lang" id="t-import" onclick="document.getElementById('import-file').click()">가져오기</button>
+            <button class="btn-lang" style="flex:1;" id="t-export" onclick="exportData()">내보내기 (JSON)</button>
+            <button class="btn-lang" style="flex:1;" id="t-import" onclick="document.getElementById('import-file').click()">가져오기</button>
             <input type="file" id="import-file" style="display:none" accept=".json" onchange="importData(event)">
         </div>
         <div id="history-list"></div>
@@ -184,36 +298,28 @@
 </div>
 
 <script>
+    // 전역 비즈니스 데이터 컬렉션
     let allSongs = [];
     let userRecords = JSON.parse(localStorage.getItem('pjsekai_records')) || {};
     let currentSong = null;
     let currentLang = 'ko';
 
-    // image_dd08b8.png에 있는 정보를 바탕으로 수정된 코드입니다.
-    const supabaseUrl = 'https://qzblhynagyfilecdenwm.supabase.co'; // 화면 상단에 있는 주소
-    const supabaseKey = '여기에 API Keys에서 복사한 anon 키를 넣으세요'; 
-
-    //const supabase = exports.supabase.createClient(supabaseUrl, supabaseKey);
+    // 다국어 인덱싱용 마스터 스키마 맵 
+    let krTitleMap = {};
+    let enTitleMap = {};
 
     const i18n = {
-        ko: { title: "계산기", filter: "난이도 필터", save: "결과 등록하기", reset: "초기화", history: "등록된 기록", export: "내보내기", import: "가져오기", delete: "삭제", load: "불러오기", alertSave: "기록이 저장되었습니다.", alertTotal: "노트 수가 총합을 초과했습니다!", alertImport: "데이터를 성공적으로 가져왔습니다.", confirmDel: "삭제하시겠습니까?" },
-        en: { title: "Calculator", filter: "Level Filter", save: "Save Record", reset: "Reset", history: "History", export: "Export", import: "Import", delete: "Del", load: "Load", alertSave: "Record saved!", alertTotal: "Notes exceed total count!", alertImport: "Import successful.", confirmDel: "Delete this record?" },
-        ja: { title: "計算機", filter: "難易度フィルタ", save: "記録を保存", reset: "リセット", history: "登録済み記録", export: "書き出し", import: "読み込み", delete: "削除", load: "呼出", alertSave: "記録を保存しました。", alertTotal: "ノーツ数が合計を超えています！", alertImport: "インポートが完了しました。", confirmDel: "削除しますか？" }
+        ko: { title: "계산기", filter: "난이도 범위 설정", save: "결과 등록하기", reset: "초기화", history: "등록된 기록", export: "내보내기", import: "가져오기", delete: "삭제", load: "불러오기", alertSave: "기록이 저장되었습니다.", alertTotal: "노트 수가 총합을 초과했습니다!", alertImport: "데이터를 성공적으로 가져왔습니다.", confirmDel: "삭제하시겠습니까?" },
+        en: { title: "Calculator", filter: "Level Range", save: "Save Record", reset: "Reset", history: "History", export: "Export", import: "Import", delete: "Del", load: "Load", alertSave: "Record saved!", alertTotal: "Notes exceed total count!", alertImport: "Import successful.", confirmDel: "Delete this record?" },
+        ja: { title: "計算機", filter: "難易度範囲設定", save: "記録を保存", reset: "リセット", history: "登録済み記録", export: "書き出し", import: "読み込み", delete: "削除", load: "呼出", alertSave: "記録を保存しました。", alertTotal: "ノーツ数が合計を超えています！", alertImport: "インポートが完了しました。", confirmDel: "削除しますか？" }
     };
 
-    const difficultyOrder = {
-        'EASY': 1,
-        'NORMAL': 2,
-        'HARD': 3,
-        'EXPERT': 4,
-        'MASTER': 5,
-        'APPEND': 6
-    };
+    const difficultyOrder = { 'EASY': 1, 'NORMAL': 2, 'HARD': 3, 'EXPERT': 4, 'MASTER': 5, 'APPEND': 6 };
 
     function setLang(lang) {
         currentLang = lang;
         document.querySelectorAll('.btn-lang').forEach(b => b.classList.remove('active'));
-        event?.target.classList.add('active');
+        if(event) event.target.classList.add('active');
         
         document.getElementById('t-title').innerText = i18n[lang].title;
         document.getElementById('t-filter').innerText = i18n[lang].filter;
@@ -223,32 +329,67 @@
         document.getElementById('t-export').innerText = i18n[lang].export;
         document.getElementById('t-import').innerText = i18n[lang].import;
         
+        // 레이아웃 텍스트 갱신 유도
+        if(document.getElementById('tab-btn-calc')) {
+            document.getElementById('tab-btn-calc').innerText = i18n[lang].title;
+            document.getElementById('tab-btn-record').innerText = i18n[lang].history;
+        }
+
         filterSongs();
         renderHistory();
+        if(currentSong) selectSong(currentSong.id);
+    }
+
+    // 4. 모바일 화면 전환을 위한 탭 스위칭 엔진
+    function switchTab(tab) {
+        document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.card-section').forEach(c => c.classList.remove('active-tab'));
+        
+        if(tab === 'calc') {
+            document.getElementById('tab-btn-calc').classList.add('active');
+            document.getElementById('section-calc').classList.add('active-tab');
+        } else {
+            document.getElementById('tab-btn-record').classList.add('active');
+            document.getElementById('section-record').classList.add('active-tab');
+        }
     }
 
     function getJacketUrl(assetName) {
         return `./assets/jackets/${assetName}.webp`;
-        
     }
 
+    // 5. 다국어 마스터 DB 멀티 패치 및 병렬 데이터 바인딩 런타임
     async function fetchSongData() {
         try {
-            const [musicRes, diffRes] = await Promise.all([
-                fetch('./assets/musics.json'),
-                fetch('./assets/musicDifficulties.json')
-            ]);
-            const musics = await musicRes.json();
-            const difficulties = await diffRes.json();
+            // 캐시 버스팅 파라미터 강제 주입형 비동기 패치 일괄 처리
+            const cacheBust = `?t=${Date.now()}`;
+            const fetches = [
+                fetch('./assets/musics.json' + cacheBust).then(r => r.json()),
+                fetch('./assets/musicDifficulties.json' + cacheBust).then(r => r.json()),
+                fetch('./assets/musicskr.json' + cacheBust).then(r => r.json()).catch(() => []),
+                fetch('./assets/musicsen.json' + cacheBust).then(r => r.json()).catch(() => [])
+            ];
+
+            const [musics, difficulties, musicsKr, musicsEn] = await Promise.all(fetches);
+
+            musicsKr.forEach(m => {
+                krTitleMap[Number(m.id)] = m.infos?.[0]?.title || ''; 
+            });
+            musicsEn.forEach(m => enTitleMap[Number(m.id)] = m.title);
 
             allSongs = difficulties.map(diff => {
-                const music = musics.find(m => m.id === diff.musicId);
+                const mId = Number(diff.musicId);
+                const music = musics.find(m => Number(m.id) === mId);
+                
                 return {
                     id: `${diff.musicId}-${diff.musicDifficulty}`,
-                    name: music ? music.title : 'Unknown',
-                    level: diff.playLevel,
+                    musicId: mId,
+                    titleJp: music ? music.title : 'Unknown',
+                    titleKr: krTitleMap[mId] || '',
+                    titleEn: enTitleMap[mId] || '',
+                    level: Number(diff.playLevel),
                     difficulty: diff.musicDifficulty.toUpperCase(),
-                    totalNotes: diff.totalNoteCount,
+                    totalNotes: Number(diff.totalNoteCount),
                     jacket: music ? getJacketUrl(music.assetbundleName) : ''
                 };
             });
@@ -257,42 +398,75 @@
             document.getElementById('loading').style.display = 'none';
             document.getElementById('main-content').style.display = 'grid';
         } catch (e) {
-            console.error(e);
+            console.error("데이터 동기화 실패 엔진 크래시: ", e);
+            document.getElementById('loading-text').innerText = "Data Synchronization Failed.";
         }
     }
 
     function initApp() {
-        const lvSelect = document.getElementById('level-select');
-        const levels = [...new Set(allSongs.map(s => s.level))].sort((a, b) => a - b);
-        lvSelect.innerHTML = '<option value="all">All Levels</option>' + levels.map(lv => `<option value="${lv}">${lv}</option>`).join('');
-        lvSelect.onchange = filterSongs;
         setLang('ko');
     }
 
+    // 5 & 6. 로컬 서버 및 일섭 기준 분기형 조건부 복합 타이틀 렌더러
+    function generateTitleHtml(song) {
+        let mainTitle = song.titleJp;
+        let subTitle = "";
+        let isJpServerOnly = false;
+
+        if (currentLang === 'ko') {
+            if (song.titleKr) { mainTitle = song.titleKr; subTitle = song.titleJp; } 
+            else { isJpServerOnly = true; }
+        } else if (currentLang === 'en') {
+            if (song.titleEn) { mainTitle = song.titleEn; subTitle = song.titleJp; } 
+            else { isJpServerOnly = true; }
+        } else {
+            // 일본어 선택 시 서브타이틀 비활성화
+            mainTitle = song.titleJp;
+        }
+
+        const badgeHtml = isJpServerOnly ? `<span class="badge-jp">JP</span>` : '';
+        return `
+            <div class="title-main">${mainTitle}${badgeHtml}</div>
+            ${subTitle ? `<div class="title-sub">${subTitle}</div>` : ''}
+        `;
+    }
+
+    // 1 & 2. 난이도 유연 범위 매칭 및 타입 토글형 고집적 필터 엔진
     function filterSongs() {
-        const lv = document.getElementById('level-select').value;
+        const minLv = Number(document.getElementById('level-min').value) || 1;
+        const maxLv = Number(document.getElementById('level-max').value) || 38;
         const keyword = document.getElementById('song-search-input').value.toLowerCase();
+        
+        // 활성화된 체크박스 난이도 밸류 추출
+        const activeDiffs = Array.from(document.querySelectorAll('#diff-checkboxes input:checked')).map(cb => cb.value);
         const listDiv = document.getElementById('song-list');
         
-        // 1. 필터링
-        let filtered = allSongs.filter(s => 
-            (lv === 'all' || s.level == lv) && 
-            s.name.toLowerCase().includes(keyword)
-        );
+        let filtered = allSongs.filter(s => {
+            const matchLevel = s.level >= minLv && s.level <= maxLv;
+            const matchDiff = activeDiffs.includes(s.difficulty);
+            
+            // 다국어 명칭 통합형 키워드 쿼리 처리
+            const matchKeyword = s.titleJp.toLowerCase().includes(keyword) || 
+                                 s.titleKr.toLowerCase().includes(keyword) || 
+                                 s.titleEn.toLowerCase().includes(keyword);
+                                 
+            return matchLevel && matchDiff && matchKeyword;
+        });
 
-        // 2. 난이도 순서로 정렬 (이지 -> 노말 -> 하드 -> 익스 -> 마스터 -> 어펜드)
         filtered.sort((a, b) => {
+            if(a.level !== b.level) return a.level - b.level;
             return difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty];
         });
 
-        // 3. 화면 렌더링
         listDiv.innerHTML = filtered.map(s => `
             <div class="song-option" onclick="selectSong('${s.id}')">
-                <img src="${s.jacket}" loading="lazy" onerror="this.src='https://placehold.co/50?text=?'">
+                <img src="${s.jacket}" loading="lazy" onerror="this.src='https://placehold.co/50?text=?\''">
                 <div class="song-option-info">
-                    <div style="font-weight:bold">${s.name}</div>
-                    <span class="lv-bold diff-${s.difficulty}">Lv.${s.level}</span> | 
-                    <span class="diff-${s.difficulty}">${s.difficulty}</span>
+                    ${generateTitleHtml(s)}
+                    <div style="margin-top: 4px; font-size:12px;">
+                        <span class="lv-bold diff-${s.difficulty}">Lv.${s.level}</span> | 
+                        <span class="diff-${s.difficulty}">${s.difficulty}</span>
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -300,17 +474,19 @@
 
     function selectSong(id) {
         currentSong = allSongs.find(s => s.id === id);
+        if(!currentSong) return;
+        
         const ui = document.getElementById('selected-song-ui');
-        const diffDisplay = document.getElementById('selected-diff');
-        
         ui.style.display = 'flex';
-        document.getElementById('selected-jacket').src = currentSong.jacket;
-        document.getElementById('selected-title').innerText = currentSong.name;
         
-        // 클래스를 초기화하고 새로 부여합니다
+        document.getElementById('selected-jacket').src = currentSong.jacket;
+        document.getElementById('selected-title').innerHTML = generateTitleHtml(currentSong);
+        
+        const diffDisplay = document.getElementById('selected-diff');
         diffDisplay.className = `diff-${currentSong.difficulty}`;
-        diffDisplay.style.fontSize = "0.8em";
-        diffDisplay.innerText = `Lv.${currentSong.level} ${currentSong.difficulty}`;
+        diffDisplay.style.fontSize = "0.85em";
+        diffDisplay.style.marginTop = "4px";
+        diffDisplay.innerText = `Lv.${currentSong.level} ${currentSong.difficulty} (Notes: ${currentSong.totalNotes})`;
         
         resetInputs();
     }
@@ -331,28 +507,21 @@
         let m = +document.getElementById('miss').value;
         const total = currentSong.totalNotes;
 
-        // --- 자동 보정 로직 시작 ---
         if (g + gd + b + m > total) {
-            // 방금 수정한 필드가 무엇인지 찾아내어 최대치로 고정하기 위해
-            // 현재 활성화된 input 요소를 확인합니다.
             const activeEl = document.activeElement;
             if (activeEl && activeEl.type === 'number') {
                 const otherSums = (g + gd + b + m) - (+activeEl.value);
                 activeEl.value = total - otherSums;
-                
-                // 보정된 값으로 변수 다시 할당
                 g = +document.getElementById('great').value;
                 gd = +document.getElementById('good').value;
                 b = +document.getElementById('bad').value;
                 m = +document.getElementById('miss').value;
             }
         }
-        // --- 자동 보정 로직 끝 ---
 
         const p = total - (g + gd + b + m);
         document.getElementById('perf').value = p;
 
-        // 점수 계산 (보정 후 p는 최소 0임이 보장됨)
         const score = Math.floor(((p + g/2 + gd/4 + b/8) / total) * 10000000);
         document.getElementById('result-score').innerText = score.toLocaleString();
 
@@ -363,7 +532,6 @@
         } else { 
             rating = (baseLevel - 2) + (score - 9500000) / 150000; 
         }
-        
         if (rating < 0) rating = 0;
 
         document.getElementById('potential-val').innerText = `Rating: ${rating.toFixed(2)}`;
@@ -374,22 +542,103 @@
         if (!currentSong) return;
         const { score, rating } = calculate();
         userRecords[currentSong.id] = {
-            name: currentSong.name,
+            id: currentSong.id,
+            musicId: currentSong.musicId,
+            name: currentSong.titleJp, // 내부 식별용 기본값 고정
             diff: currentSong.difficulty,
+            level: currentSong.level,
             score: score,
-            rating: rating.toFixed(2),
+            rating: Number(rating.toFixed(2)),
             details: { 
                 great: +document.getElementById('great').value, 
                 good: +document.getElementById('good').value, 
                 bad: +document.getElementById('bad').value, 
                 miss: +document.getElementById('miss').value 
             },
-            date: new Date().toLocaleDateString()
+            date: Date.now()
         };
         
         localStorage.setItem('pjsekai_records', JSON.stringify(userRecords));
         renderHistory();
         alert(i18n[currentLang].alertSave);
+    }
+
+    // 레이팅 갱신을 전담하는 독립 함수
+    function updateRatingDashboard() {
+        const records = Object.values(userRecords);
+        const top50 = records.sort((a,b) => b.rating - a.rating).slice(0, 50);
+        const avg = top50.reduce((acc, cur) => acc + parseFloat(cur.rating), 0) / (top50.length || 1);
+        
+        // 이제 HTML 구조의 ID를 찾아 값을 바꿈
+        const display = document.getElementById('top50-avg');
+        if(display) {
+            display.innerText = avg.toFixed(3);
+        }
+    }
+
+    // 3. 기록 대시보드 다이나믹 다중 정렬/필터링 렌더링 파이프라인
+    function renderHistory() {
+        const list = document.getElementById('history-list');
+        const searchKeyword = document.getElementById('history-search-input').value.toLowerCase();
+        const minLv = Number(document.getElementById('history-lv-min').value) || 1;
+        const maxLv = Number(document.getElementById('history-lv-max').value) || 38;
+        const sortType = document.getElementById('history-sort-select').value;
+
+        // 로컬 객체를 연산 가능한 배열 구조화
+        let records = Object.values(userRecords).map(r => {
+            const originalSong = allSongs.find(s => s.id === r.id);
+            return { ...r, songRef: originalSong };
+        });
+
+        // 다중 조건 필터 체이닝 연산
+        records = records.filter(r => {
+            if (!r.songRef) return false;
+            const targetSong = r.songRef;
+            const matchLevel = targetSong.level >= minLv && targetSong.level <= maxLv;
+            const matchKeyword = targetSong.titleJp.toLowerCase().includes(searchKeyword) ||
+                                 targetSong.titleKr.toLowerCase().includes(searchKeyword) ||
+                                 targetSong.titleEn.toLowerCase().includes(searchKeyword);
+            return matchLevel && matchKeyword;
+        });
+
+        // 분기 분산형 정렬 매핑 엔진
+        records.sort((a, b) => {
+            if (sortType === 'rating-desc') return b.rating - a.rating;
+            if (sortType === 'rating-asc') return a.rating - b.rating;
+            if (sortType === 'level-desc') return b.level - a.level;
+            if (sortType === 'level-asc') return a.level - b.level;
+            // 최신 등록순 fallback (latest)
+            return (b.date || 0) - (a.date || 0);
+        });
+        
+        list.innerHTML = records.map(r => {
+            const jacketUrl = r.songRef ? r.songRef.jacket : 'https://placehold.co/45?text=?';
+            return `
+                <div class="history-item">
+                    <img src="${jacketUrl}" onerror="this.src='https://placehold.co/45?text=?'">
+                    <div class="history-info">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap:5px;">
+                            <strong style="flex:1;">${r.songRef ? generateTitleHtml(r.songRef) : r.name}</strong>
+                            <span style="font-size: 10px; color: #666; white-space:nowrap;">${r.date ? new Date(r.date).toLocaleDateString() : ''}</span>
+                        </div>
+                        <div style="margin-top:4px;">
+                            <small class="diff-${r.diff}">[${r.diff} Lv.${r.level}]</small><br>
+                            <span>${parseInt(r.score).toLocaleString()}</span> | 
+                            <span style="color:var(--secondary); font-weight:bold;">${r.rating.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:3px;">
+                        <button class="btn-load" style="font-size:11px; padding:4px 8px;" onclick="loadRecord('${r.id}')">${i18n[currentLang].load}</button>
+                        <button class="btn-danger" style="font-size:11px; padding:4px 8px;" onclick="deleteRecord('${r.id}')">${i18n[currentLang].delete}</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // 상위 50개 평점 연산 처리
+        const top50 = Object.values(userRecords).sort((a,b) => b.rating - a.rating).slice(0, 50);
+        const avg = top50.reduce((acc, cur) => acc + parseFloat(cur.rating), 0) / (top50.length || 1);
+        updateRatingDashboard();
     }
 
     function loadRecord(id) {
@@ -403,40 +652,8 @@
             document.getElementById('miss').value = record.details.miss;
         }
         calculate();
+        switchTab('calc'); // 로드 시 계산기 화면으로 포커싱 자동 이동
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function renderHistory() {
-        const list = document.getElementById('history-list');
-        const records = Object.entries(userRecords)
-            .map(([id, data]) => ({ id, ...data }))
-            .sort((a, b) => b.rating - a.rating);
-        
-        list.innerHTML = records.map(r => {
-            const songData = allSongs.find(s => s.id === r.id);
-            const jacketUrl = songData ? songData.jacket : 'https://placehold.co/45?text=?';
-            return `
-                <div class="history-item">
-                    <img src="${jacketUrl}" onerror="this.src='https://placehold.co/45?text=?'">
-                    <div class="history-info">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <strong>${r.name}</strong>
-                            <span style="font-size: 10px; color: #666;">${r.date || ''}</span>
-                        </div>
-                        <small class="diff-${r.diff}">[${r.diff}]</small><br>
-                        <span>${parseInt(r.score).toLocaleString()}</span> | 
-                        <span style="color:var(--secondary)">${r.rating}</span>
-                    </div>
-                    <div style="display:flex; gap:3px;">
-                        <button class="btn-load" style="font-size:11px; padding:5px;" onclick="loadRecord('${r.id}')">${i18n[currentLang].load}</button>
-                        <button class="btn-danger" style="font-size:11px; padding:5px;" onclick="deleteRecord('${r.id}')">${i18n[currentLang].delete}</button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-        const top50 = records.slice(0, 50);
-        const avg = top50.reduce((acc, cur) => acc + parseFloat(cur.rating), 0) / (top50.length || 1);
-        document.getElementById('top50-avg').innerText = `Top 50 Avg: ${avg.toFixed(3)}`;
     }
 
     function deleteRecord(id) {
@@ -447,7 +664,6 @@
         }
     }
 
-    // Export / Import
     function exportData() {
         const dataStr = JSON.stringify(userRecords, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
@@ -476,6 +692,7 @@
         reader.readAsText(file);
     }
 
+    // 서버 사이드 초기 패치 엔진 가동
     fetchSongData();
 </script>
 
