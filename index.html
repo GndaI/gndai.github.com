@@ -691,7 +691,7 @@
 
         // 상위 50개 평점 연산 처리
         const top50 = Object.values(userRecords).sort((a,b) => b.rating - a.rating).slice(0, 50);
-        const avg = top50.reduce((acc, cur) => acc + parseFloat(cur.rating), 0) / (top50.length || 1);
+        const avg = top50.reduce((acc, cur) => acc + parseFloat(cur.rating), 0) / 50;
         updateRatingDashboard();
     }
 
