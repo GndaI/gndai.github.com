@@ -44,7 +44,7 @@
         .lang-switcher { display: flex; gap: 5px; }
 
         .stat-bar {
-            width: 100%;
+            width: 90%;
             max-width: 1200px;
             background: linear-gradient(90deg, #1e1e1e, #2a2a2a);
             padding: 15px;
@@ -146,6 +146,41 @@
         .input-group { display: flex; align-items: center; margin-bottom: 8px; }
         .input-group label { width: 90px; font-weight: bold; font-size: 14px; }
 
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .diff-btn {
+            padding: 5px 10px;
+            border-radius: 5px;
+            background: #333; /* 꺼졌을 때 배경색 */
+            color: #888;      /* 꺼졌을 때 글자색 */
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid #444;
+            transition: all 0.2s;
+        }
+
+        /* 체크박스 자체는 숨김 */
+        .diff-btn input {
+            display: none;
+        }
+
+        /* 체크되었을 때의 색상 정의 */
+        .diff-btn:has(input:checked)[data-diff="EASY"]   { background: #66ccff; color: #000; border-color: #66ccff; }
+        .diff-btn:has(input:checked)[data-diff="NORMAL"] { background: #66ff66; color: #000; border-color: #66ff66; }
+        .diff-btn:has(input:checked)[data-diff="HARD"]   { background: #ffcc66; color: #000; border-color: #ffcc66; }
+        .diff-btn:has(input:checked)[data-diff="EXPERT"] { background: #ff6666; color: #fff; border-color: #ff6666; }
+        .diff-btn:has(input:checked)[data-diff="MASTER"] { background: #cc66ff; color: #fff; border-color: #cc66ff; }
+        .diff-btn:has(input:checked)[data-diff="APPEND"] { background: #ff66cc; color: #fff; border-color: #ff66cc; }
+
+        /* 호버 효과 */
+        .diff-btn:hover { opacity: 0.8; }
+
         button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
         .btn-primary { background: var(--primary); color: #000; }
         .btn-danger { background: #ff4d4d; color: white; }
@@ -219,72 +254,73 @@
 
 <div id="main-content" class="main-container">
     <div class="card card-section active-tab" id="section-calc">
-        <h1 id="t-title">계산기</h1>
-        
-        <div class="song-picker-container">
+        <div id="view-list">
+            <h1 id="t-title">계산기</h1>
             <div class="filter-section">
-                <label id="t-filter" style="font-size:13px; font-weight:bold; color:var(--primary);">난이도 범위 설정</label>
+                <label id="t-filter" style="font-size:13px; font-weight:bold; color:var(--primary);">난이도 범위</label>
                 <div class="range-group">
                     <input type="number" id="level-min" value="1" min="1" max="38" oninput="filterSongs()">
                     <span>~</span>
                     <input type="number" id="level-max" value="38" min="1" max="38" oninput="filterSongs()">
                 </div>
-                
                 <div class="checkbox-group" id="diff-checkboxes">
-                    <label><input type="checkbox" value="EASY" checked onchange="filterSongs()">EZ</label>
-                    <label><input type="checkbox" value="NORMAL" checked onchange="filterSongs()">NR</label>
-                    <label><input type="checkbox" value="HARD" checked onchange="filterSongs()">HD</label>
-                    <label><input type="checkbox" value="EXPERT" checked onchange="filterSongs()">EX</label>
-                    <label><input type="checkbox" value="MASTER" checked onchange="filterSongs()">MAS</label>
-                    <label><input type="checkbox" value="APPEND" checked onchange="filterSongs()">APD</label>
+                    <label class="diff-btn" data-diff="EASY"><input type="checkbox" value="EASY" checked onchange="filterSongs()">EASY</label>
+                    <label class="diff-btn" data-diff="NORMAL"><input type="checkbox" value="NORMAL" checked onchange="filterSongs()">NORMAL</label>
+                    <label class="diff-btn" data-diff="HARD"><input type="checkbox" value="HARD" checked onchange="filterSongs()">HARD</label>
+                    <label class="diff-btn" data-diff="EXPERT"><input type="checkbox" value="EXPERT" checked onchange="filterSongs()">EXPERT</label>
+                    <label class="diff-btn" data-diff="MASTER"><input type="checkbox" value="MASTER" checked onchange="filterSongs()">MASTER</label>
+                    <label class="diff-btn" data-diff="APPEND"><input type="checkbox" value="APPEND" checked onchange="filterSongs()">APPEND</label>
                 </div>
             </div>
-
-            <input type="text" id="song-search-input" placeholder="곡 이름 검색..." oninput="filterSongs()">
+            <input type="text" id="song-search-input" placeholder="곡명으로 검색..." oninput="filterSongs()">
             <div id="song-list" class="song-list-scroll"></div>
         </div>
 
-        <div class="selected-song-display" id="selected-song-ui" style="display:none; margin-top:15px;">
-            <img id="selected-jacket" src="" alt="jacket">
-            <div class="selected-info-text">
-                <div id="selected-title"></div>
-                <div id="selected-diff"></div>
+        <div id="view-input" style="display:none;">
+            <button class="btn-lang" style="margin-bottom:15px; width:100%;" onclick="showListView()">← 곡 목록으로 돌아가기</button>
+            
+            <div class="selected-song-display" id="selected-song-ui">
+                <img id="selected-jacket" src="" alt="jacket">
+                <div class="selected-info-text">
+                    <div id="selected-title"></div>
+                    <div id="selected-diff"></div>
+                </div>
             </div>
-        </div>
 
-        <div class="result-box">
-            <div id="result-score">0</div>
-            <div id="potential-val">Rating: 0.00</div>
-        </div>
+            <div class="result-box">
+                <div id="result-score">0</div>
+                <div id="potential-val">Rating: 0.00</div>
+            </div>
 
-        <div id="input-fields">
-            <div class="input-group"><label>Perfect</label><input type="number" id="perf" readonly></div>
-            <div class="input-group"><label>Great</label><input type="number" id="great" value="0" oninput="calculate()"></div>
-            <div class="input-group"><label>Good</label><input type="number" id="good" value="0" oninput="calculate()"></div>
-            <div class="input-group"><label>Bad</label><input type="number" id="bad" value="0" oninput="calculate()"></div>
-            <div class="input-group"><label>Miss</label><input type="number" id="miss" value="0" oninput="calculate()"></div>
-        </div>
+            <div id="input-fields">
+                <div class="input-group"><label>Perfect</label><input type="number" id="perf" readonly></div>
+                <div class="input-group"><label>Great</label><input type="number" id="great" value="0" oninput="calculate()"></div>
+                <div class="input-group"><label>Good</label><input type="number" id="good" value="0" oninput="calculate()"></div>
+                <div class="input-group"><label>Bad</label><input type="number" id="bad" value="0" oninput="calculate()"></div>
+                <div class="input-group"><label>Miss</label><input type="number" id="miss" value="0" oninput="calculate()"></div>
+            </div>
 
-        <button class="btn-primary" style="width: 100%; margin-top:10px;" id="t-save" onclick="saveRecord()">결과 등록하기</button>
-        <button class="btn-load" style="width: 100%; margin-top:5px;" id="t-reset" onclick="resetInputs()">초기화</button>
+            <button class="btn-primary" style="width: 100%; margin-top:10px;" id="t-save" onclick="saveRecord()">결과 등록하기</button>
+            <button class="btn-load" style="width: 100%; margin-top:5px;" id="t-reset" onclick="resetInputs()">초기화</button>
+        </div>
     </div>
 
     <div class="card card-section" id="section-record">
         <h2 id="t-history">등록된 기록</h2>
         
         <div class="filter-section">
-            <input type="text" id="history-search-input" placeholder="기록 내부 곡명 검색..." oninput="renderHistory()">
+            <input type="text" id="history-search-input" placeholder="곡명으로 검색..." oninput="renderHistory()">
             <div class="range-group">
                 <input type="number" id="history-lv-min" value="1" min="1" max="38" placeholder="최소Lv" oninput="renderHistory()">
                 <span>~</span>
                 <input type="number" id="history-lv-max" value="38" min="1" max="38" placeholder="최대Lv" oninput="renderHistory()">
             </div>
             <select id="history-sort-select" onchange="renderHistory()">
-                <option value="latest">최신 등록순</option>
-                <option value="rating-desc">레이팅 차순 (▼)</option>
-                <option value="rating-asc">레이팅 차순 (▲)</option>
-                <option value="level-desc">레벨 차순 (▼)</option>
-                <option value="level-asc">레벨 차순 (▲)</option>
+                <option id="option-latest" value="latest">최신 등록순</option>
+                <option id="option-rating-desc" value="rating-desc">레이팅순 (▼)</option>
+                <option id="option-rating-asc" value="rating-asc">레이팅순 (▲)</option>
+                <option id="option-level-desc" value="level-desc">레벨순 (▼)</option>
+                <option id="option-level-asc" value="level-asc">레벨순 (▲)</option>
             </select>
         </div>
 
@@ -309,9 +345,9 @@
     let enTitleMap = {};
 
     const i18n = {
-        ko: { title: "계산기", filter: "난이도 범위 설정", save: "결과 등록하기", reset: "초기화", history: "등록된 기록", export: "내보내기", import: "가져오기", delete: "삭제", load: "불러오기", alertSave: "기록이 저장되었습니다.", alertTotal: "노트 수가 총합을 초과했습니다!", alertImport: "데이터를 성공적으로 가져왔습니다.", confirmDel: "삭제하시겠습니까?" },
-        en: { title: "Calculator", filter: "Level Range", save: "Save Record", reset: "Reset", history: "History", export: "Export", import: "Import", delete: "Del", load: "Load", alertSave: "Record saved!", alertTotal: "Notes exceed total count!", alertImport: "Import successful.", confirmDel: "Delete this record?" },
-        ja: { title: "計算機", filter: "難易度範囲設定", save: "記録を保存", reset: "リセット", history: "登録済み記録", export: "書き出し", import: "読み込み", delete: "削除", load: "呼出", alertSave: "記録を保存しました。", alertTotal: "ノーツ数が合計を超えています！", alertImport: "インポートが完了しました。", confirmDel: "削除しますか？" }
+        ko: { title: "계산기", filter: "난이도 범위 설정", save: "결과 등록하기", reset: "초기화", history: "등록된 기록", export: "내보내기", import: "가져오기", delete: "삭제", load: "불러오기", alertSave: "기록이 저장되었습니다.", alertTotal: "노트 수가 총합을 초과했습니다!", alertImport: "데이터를 성공적으로 가져왔습니다.", confirmDel: "삭제하시겠습니까?", latest: "최신 등록순", rating: "레이팅순", level: "레벨순", search: "곡명으로 검색..." },
+        en: { title: "Calculator", filter: "Level Range", save: "Save Record", reset: "Reset", history: "History", export: "Export", import: "Import", delete: "Del", load: "Load", alertSave: "Record saved!", alertTotal: "Notes exceed total count!", alertImport: "Import successful.", confirmDel: "Delete this record?", latest: "Latest", rating: "Rating", level: "Level", search: "Search by title..." },
+        ja: { title: "計算機", filter: "難易度範囲設定", save: "記録を保存", reset: "リセット", history: "登録済み記録", export: "書き出し", import: "読み込み", delete: "削除", load: "呼出", alertSave: "記録を保存しました。", alertTotal: "ノーツ数が合計を超えています！", alertImport: "インポートが完了しました。", confirmDel: "削除しますか？", latest: "最新登録順", rating: "レーティング順", level: "レベル順", search: "タイトルで検索..." }
     };
 
     const difficultyOrder = { 'EASY': 1, 'NORMAL': 2, 'HARD': 3, 'EXPERT': 4, 'MASTER': 5, 'APPEND': 6 };
@@ -328,7 +364,14 @@
         document.getElementById('t-history').innerText = i18n[lang].history;
         document.getElementById('t-export').innerText = i18n[lang].export;
         document.getElementById('t-import').innerText = i18n[lang].import;
-        
+        document.getElementById('option-latest').innerText = i18n[lang].latest;
+        document.getElementById('option-rating-desc').innerText = i18n[lang].rating + " (▼)";
+        document.getElementById('option-rating-asc').innerText = i18n[lang].rating + " (▲)";
+        document.getElementById('option-level-desc').innerText = i18n[lang].level + " (▼)";
+        document.getElementById('option-level-asc').innerText = i18n[lang].level + " (▲)";
+        document.getElementById('history-search-input').placeholder = i18n[lang].search;
+        document.getElementById('song-search-input').placeholder = i18n[lang].search;
+
         // 레이아웃 텍스트 갱신 유도
         if(document.getElementById('tab-btn-calc')) {
             document.getElementById('tab-btn-calc').innerText = i18n[lang].title;
@@ -471,6 +514,16 @@
             </div>
         `).join('');
     }
+    function showInputView() {
+        document.getElementById('view-list').style.display = 'none';
+        document.getElementById('view-input').style.display = 'block';
+    }
+
+    function showListView() {
+        document.getElementById('view-list').style.display = 'block';
+        document.getElementById('view-input').style.display = 'none';
+        // 필요 시 여기에 초기화 로직 추가 (ex: resetInputs())
+    }
 
     function selectSong(id) {
         currentSong = allSongs.find(s => s.id === id);
@@ -489,6 +542,7 @@
         diffDisplay.innerText = `Lv.${currentSong.level} ${currentSong.difficulty} (Notes: ${currentSong.totalNotes})`;
         
         resetInputs();
+        showInputView();
     }
 
     function resetInputs() {
